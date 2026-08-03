@@ -166,6 +166,44 @@ static lv_obj_t * make_button(lv_obj_t * parent,
     return button;
 }
 
+static void style_badge(lv_obj_t * label, uint32_t fg, uint32_t bg)
+{
+    lv_obj_set_style_text_color(label, color(fg), 0);
+    lv_obj_set_style_bg_color(label, color(bg), 0);
+    lv_obj_set_style_bg_opa(label, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(label, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_pad_hor(label, 8, 0);
+    lv_obj_set_style_pad_ver(label, 3, 0);
+}
+
+static lv_obj_t * make_icon_text_button(lv_obj_t * parent,
+                                        const char * icon,
+                                        const char * text,
+                                        bool primary,
+                                        lv_obj_t ** label_out)
+{
+    lv_obj_t * button = lv_button_create(parent);
+    lv_obj_t * row;
+    lv_obj_t * text_label;
+
+    apply_button_style(button, primary);
+
+    row = make_plain(button);
+    lv_obj_set_size(row, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_center(row);
+    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(row, 5, 0);
+
+    (void)make_label(row, icon, &lv_font_montserrat_16, primary ? 0xFFFFFFU : STIM_COLOR_TEXT);
+    text_label = make_label(row, text, &stim_font_16, primary ? 0xFFFFFFU : STIM_COLOR_TEXT);
+
+    if(label_out != NULL) {
+        *label_out = text_label;
+    }
+    return button;
+}
+
 static lv_obj_t * make_section_header(lv_obj_t * parent, const char * title)
 {
     lv_obj_t * header = make_plain(parent);
@@ -218,27 +256,33 @@ static void refresh_channel(size_t index)
     stim_channel_t * channel = &ui.model->channels[index];
     channel_view_t * view = &ui.channels[index];
     char buffer[32];
-    uint32_t header_color = STIM_COLOR_NAVY;
+    uint32_t badge_fg = STIM_COLOR_MUTED;
+    uint32_t badge_bg = STIM_COLOR_DISABLED;
+    uint32_t border_color = STIM_COLOR_BORDER;
     bool configured = channel->state != STIM_STATE_UNCONFIGURED;
     bool active = (channel->state == STIM_STATE_RUNNING) || (channel->state == STIM_STATE_PAUSED);
 
     if(channel->state == STIM_STATE_RUNNING) {
-        header_color = STIM_COLOR_TEAL;
+        badge_fg = STIM_COLOR_TEAL;
+        badge_bg = STIM_COLOR_RUNNING_SOFT;
+        border_color = STIM_COLOR_TEAL;
     }
     else if(channel->state == STIM_STATE_PAUSED) {
-        header_color = STIM_COLOR_AMBER;
+        badge_fg = STIM_COLOR_AMBER;
+        badge_bg = STIM_COLOR_SELECTED;
+        border_color = STIM_COLOR_AMBER;
     }
     else if(channel->selected) {
-        header_color = STIM_COLOR_BLUE;
+        badge_fg = STIM_COLOR_BLUE;
+        badge_bg = STIM_COLOR_SELECTED;
+        border_color = STIM_COLOR_BLUE;
     }
 
-    lv_obj_set_style_bg_color(view->header, color(header_color), 0);
-    lv_obj_set_style_border_width(view->card, channel->selected ? 2 : 1, 0);
-    lv_obj_set_style_border_color(view->card,
-                                  color(channel->selected ? STIM_COLOR_BLUE : STIM_COLOR_BORDER),
-                                  0);
+    style_badge(view->state_label, badge_fg, badge_bg);
+    lv_obj_set_style_border_width(view->card, (channel->selected || active) ? 2 : 1, 0);
+    lv_obj_set_style_border_color(view->card, color(border_color), 0);
     lv_obj_set_style_bg_color(view->card,
-                              color(channel->selected ? STIM_COLOR_SELECTED : STIM_COLOR_CARD),
+                              color((channel->selected && !active) ? STIM_COLOR_SELECTED : STIM_COLOR_CARD),
                               0);
 
     (void)snprintf(buffer, sizeof(buffer), "%c通道", channel->id);
@@ -695,11 +739,13 @@ static void create_metric(lv_obj_t * parent,
                           lv_obj_t ** value_label,
                           bool time_value)
 {
-    lv_obj_t * box = make_panel(parent);
+    lv_obj_t * box = make_plain(parent);
 
     lv_obj_set_height(box, LV_PCT(100));
     lv_obj_set_flex_grow(box, 1);
-    lv_obj_set_style_radius(box, 8, 0);
+    lv_obj_set_style_bg_color(box, color(STIM_COLOR_DISABLED), 0);
+    lv_obj_set_style_bg_opa(box, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(box, STIM_METRIC_RADIUS, 0);
     lv_obj_set_style_pad_all(box, 8, 0);
     lv_obj_set_flex_flow(box, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(box, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
@@ -726,14 +772,13 @@ static void create_channel_card(lv_obj_t * parent, size_t index)
 
     view->header = make_plain(view->card);
     lv_obj_set_size(view->header, LV_PCT(100), 48);
-    lv_obj_set_style_bg_opa(view->header, LV_OPA_COVER, 0);
-    lv_obj_set_style_radius(view->header, STIM_PANEL_RADIUS, 0);
-    lv_obj_set_style_pad_hor(view->header, 12, 0);
+    lv_obj_set_style_pad_hor(view->header, 14, 0);
     lv_obj_set_flex_flow(view->header, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(view->header, LV_FLEX_ALIGN_SPACE_BETWEEN,
                           LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    view->title_label = make_label(view->header, "A通道", &stim_font_20, 0xFFFFFFU);
-    view->state_label = make_label(view->header, "就绪", &stim_font_16, 0xFFFFFFU);
+    view->title_label = make_label(view->header, "A通道", &stim_font_20, STIM_COLOR_TEXT);
+    view->state_label = make_label(view->header, "就绪", &stim_font_16, STIM_COLOR_MUTED);
+    style_badge(view->state_label, STIM_COLOR_MUTED, STIM_COLOR_DISABLED);
 
     body = make_plain(view->card);
     lv_obj_set_width(body, LV_PCT(100));
@@ -757,19 +802,19 @@ static void create_channel_card(lv_obj_t * parent, size_t index)
     lv_obj_set_flex_flow(controls, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_column(controls, 6, 0);
 
-    view->start_button = make_button(controls, "开始", false, NULL);
+    view->start_button = make_icon_text_button(controls, LV_SYMBOL_PLAY, "开始", false, NULL);
     lv_obj_set_height(view->start_button, LV_PCT(100));
     lv_obj_set_flex_grow(view->start_button, 1);
     lv_obj_add_event_cb(view->start_button, channel_control_event, LV_EVENT_CLICKED,
                         (void *)(base | 0U));
 
-    view->pause_button = make_button(controls, "暂停", false, &view->pause_label);
+    view->pause_button = make_icon_text_button(controls, LV_SYMBOL_PAUSE, "暂停", false, &view->pause_label);
     lv_obj_set_height(view->pause_button, LV_PCT(100));
     lv_obj_set_flex_grow(view->pause_button, 1);
     lv_obj_add_event_cb(view->pause_button, channel_control_event, LV_EVENT_CLICKED,
                         (void *)(base | 1U));
 
-    view->stop_button = make_button(controls, "停止", false, NULL);
+    view->stop_button = make_icon_text_button(controls, LV_SYMBOL_STOP, "停止", false, NULL);
     lv_obj_set_height(view->stop_button, LV_PCT(100));
     lv_obj_set_flex_grow(view->stop_button, 1);
     lv_obj_set_style_border_color(view->stop_button, color(STIM_COLOR_CORAL), 0);
