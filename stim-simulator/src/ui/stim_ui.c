@@ -1111,7 +1111,7 @@ static lv_obj_t * create_receiver_panel(lv_obj_t * parent)
     lv_obj_t * select_all;
     size_t index;
 
-    lv_obj_set_size(panel, LV_PCT(100), 322);
+    lv_obj_set_size(panel, LV_PCT(100), 280);
     lv_obj_set_flex_flow(panel, LV_FLEX_FLOW_COLUMN);
 
     header = make_plain(panel);
