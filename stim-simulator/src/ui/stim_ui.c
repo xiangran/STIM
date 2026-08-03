@@ -655,22 +655,27 @@ static void create_header(lv_obj_t * screen)
     lv_obj_set_size(spacer, 205, 1);
 
     tabs = make_plain(header);
-    lv_obj_set_size(tabs, 520, LV_PCT(100));
+    lv_obj_set_size(tabs, 400, 48);
+    lv_obj_set_style_bg_color(tabs, color(STIM_COLOR_DISABLED), 0);
+    lv_obj_set_style_bg_opa(tabs, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(tabs, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_pad_all(tabs, 4, 0);
     lv_obj_set_flex_flow(tabs, LV_FLEX_FLOW_ROW);
-    lv_obj_set_style_pad_column(tabs, 8, 0);
+    lv_obj_set_style_pad_column(tabs, 4, 0);
 
     ui.medium_tab = make_button(tabs, "中频治疗", false, NULL);
     lv_obj_set_height(ui.medium_tab, LV_PCT(100));
     lv_obj_set_flex_grow(ui.medium_tab, 1);
-    lv_obj_set_style_text_font(ui.medium_tab, &stim_font_24, 0);
+    lv_obj_set_style_border_width(ui.medium_tab, 0, 0);
+    lv_obj_set_style_text_font(lv_obj_get_child(ui.medium_tab, 0), &stim_font_20, 0);
     lv_obj_add_event_cb(ui.medium_tab, tab_event, LV_EVENT_CLICKED, (void *)(uintptr_t)STIM_SCREEN_MEDIUM);
-    lv_obj_set_style_text_font(lv_obj_get_child(ui.medium_tab, 0), &stim_font_24, 0);
 
     ui.low_tab = make_button(tabs, "低频治疗", false, NULL);
     lv_obj_set_height(ui.low_tab, LV_PCT(100));
     lv_obj_set_flex_grow(ui.low_tab, 1);
+    lv_obj_set_style_border_width(ui.low_tab, 0, 0);
+    lv_obj_set_style_text_font(lv_obj_get_child(ui.low_tab, 0), &stim_font_20, 0);
     lv_obj_add_event_cb(ui.low_tab, tab_event, LV_EVENT_CLICKED, (void *)(uintptr_t)STIM_SCREEN_LOW);
-    lv_obj_set_style_text_font(lv_obj_get_child(ui.low_tab, 0), &stim_font_24, 0);
 
     right = make_plain(header);
     lv_obj_set_size(right, 205, LV_PCT(100));
@@ -679,8 +684,9 @@ static void create_header(lv_obj_t * screen)
     lv_obj_set_style_pad_column(right, 16, 0);
     (void)make_label(right, "14:28", &lv_font_montserrat_24, STIM_COLOR_TEXT);
 
-    settings = make_button(right, "设置", false, NULL);
-    lv_obj_set_size(settings, 72, 44);
+    settings = make_button(right, LV_SYMBOL_SETTINGS, false, NULL);
+    lv_obj_set_size(settings, STIM_TOUCH_MIN, STIM_TOUCH_MIN);
+    lv_obj_set_style_text_font(lv_obj_get_child(settings, 0), &lv_font_montserrat_20, 0);
     lv_obj_add_event_cb(settings, settings_event, LV_EVENT_CLICKED, NULL);
 }
 
@@ -1105,6 +1111,24 @@ void stim_ui_create(stim_model_t * model)
     refresh_all();
 }
 
+static void set_tab_active(lv_obj_t * tab, bool active)
+{
+    lv_obj_t * label = lv_obj_get_child(tab, 0);
+
+    lv_obj_set_style_bg_grad_dir(tab, LV_GRAD_DIR_NONE, 0);
+    if(active) {
+        lv_obj_set_style_bg_color(tab, color(STIM_COLOR_GRAD_START), 0);
+        lv_obj_set_style_bg_grad_color(tab, color(STIM_COLOR_GRAD_END), 0);
+        lv_obj_set_style_bg_grad_dir(tab, LV_GRAD_DIR_HOR, 0);
+        lv_obj_set_style_bg_opa(tab, LV_OPA_COVER, 0);
+    }
+    else {
+        lv_obj_set_style_bg_opa(tab, LV_OPA_TRANSP, 0);
+    }
+    lv_obj_set_style_text_color(tab, color(active ? 0xFFFFFFU : STIM_COLOR_MUTED), 0);
+    lv_obj_set_style_text_color(label, color(active ? 0xFFFFFFU : STIM_COLOR_MUTED), 0);
+}
+
 void stim_ui_show_screen(stim_screen_t screen)
 {
     bool medium = screen == STIM_SCREEN_MEDIUM;
@@ -1119,15 +1143,6 @@ void stim_ui_show_screen(stim_screen_t screen)
         lv_obj_remove_flag(ui.low_page, LV_OBJ_FLAG_HIDDEN);
     }
 
-    lv_obj_set_style_bg_color(ui.medium_tab, color(medium ? STIM_COLOR_NAVY : STIM_COLOR_CARD), 0);
-    lv_obj_set_style_border_width(ui.medium_tab, 0, 0);
-    lv_obj_set_style_text_color(ui.medium_tab, color(medium ? 0xFFFFFFU : STIM_COLOR_TEXT), 0);
-    lv_obj_set_style_text_color(lv_obj_get_child(ui.medium_tab, 0),
-                                color(medium ? 0xFFFFFFU : STIM_COLOR_TEXT), 0);
-
-    lv_obj_set_style_bg_color(ui.low_tab, color(medium ? STIM_COLOR_CARD : STIM_COLOR_NAVY), 0);
-    lv_obj_set_style_border_width(ui.low_tab, 0, 0);
-    lv_obj_set_style_text_color(ui.low_tab, color(medium ? STIM_COLOR_TEXT : 0xFFFFFFU), 0);
-    lv_obj_set_style_text_color(lv_obj_get_child(ui.low_tab, 0),
-                                color(medium ? STIM_COLOR_TEXT : 0xFFFFFFU), 0);
+    set_tab_active(ui.medium_tab, medium);
+    set_tab_active(ui.low_tab, !medium);
 }
