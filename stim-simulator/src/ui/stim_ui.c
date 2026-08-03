@@ -506,11 +506,15 @@ static void refresh_parameters(stim_screen_t screen)
 
     for(index = 0U; index < 3U; ++index) {
         bool selected = index == (size_t)waveform;
+        lv_obj_t * label = lv_obj_get_child(ui.wave_buttons[screen][index], 0);
+
         lv_obj_set_style_bg_color(ui.wave_buttons[screen][index],
-                                  color(selected ? STIM_COLOR_BLUE : STIM_COLOR_DISABLED), 0);
+                                  color(selected ? STIM_COLOR_GRAD_START : STIM_COLOR_DISABLED), 0);
+        lv_obj_set_style_bg_grad_color(ui.wave_buttons[screen][index], color(STIM_COLOR_GRAD_END), 0);
+        lv_obj_set_style_bg_grad_dir(ui.wave_buttons[screen][index],
+                                    selected ? LV_GRAD_DIR_HOR : LV_GRAD_DIR_NONE, 0);
         lv_obj_set_style_text_color(ui.wave_buttons[screen][index],
                                     color(selected ? 0xFFFFFFU : STIM_COLOR_TEXT), 0);
-        lv_obj_t * label = lv_obj_get_child(ui.wave_buttons[screen][index], 0);
         lv_obj_set_style_text_color(label, color(selected ? 0xFFFFFFU : STIM_COLOR_TEXT), 0);
     }
 }
@@ -839,12 +843,12 @@ static lv_obj_t * create_prescription_row(lv_obj_t * parent, size_t screen, size
     lv_obj_t * badge;
     char number[8];
 
-    lv_obj_set_size(row, LV_PCT(100), compact ? 42 : 48);
+    lv_obj_set_size(row, LV_PCT(100), compact ? STIM_TOUCH_MIN : 50);
     lv_obj_set_style_bg_color(row, color(STIM_COLOR_CARD), 0);
     lv_obj_set_style_bg_opa(row, LV_OPA_COVER, 0);
     lv_obj_set_style_border_color(row, color(STIM_COLOR_BORDER), 0);
     lv_obj_set_style_border_width(row, 1, 0);
-    lv_obj_set_style_radius(row, 8, 0);
+    lv_obj_set_style_radius(row, 14, 0);
     lv_obj_set_style_pad_hor(row, 8, 0);
     lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -853,10 +857,12 @@ static lv_obj_t * create_prescription_row(lv_obj_t * parent, size_t screen, size
     lv_obj_add_event_cb(row, prescription_event, LV_EVENT_CLICKED, (void *)(uintptr_t)index);
 
     badge = make_plain(row);
-    lv_obj_set_size(badge, 48, compact ? 30 : 34);
-    lv_obj_set_style_bg_color(badge, color(STIM_COLOR_BLUE), 0);
+    lv_obj_set_size(badge, 30, 30);
+    lv_obj_set_style_radius(badge, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(badge, color(STIM_COLOR_GRAD_START), 0);
+    lv_obj_set_style_bg_grad_color(badge, color(STIM_COLOR_GRAD_END), 0);
+    lv_obj_set_style_bg_grad_dir(badge, LV_GRAD_DIR_HOR, 0);
     lv_obj_set_style_bg_opa(badge, LV_OPA_COVER, 0);
-    lv_obj_set_style_radius(badge, 6, 0);
     (void)snprintf(number, sizeof(number), "%02u", (unsigned)(index + 1U));
     lv_obj_t * badge_label = make_label(badge, number, &lv_font_montserrat_20, 0xFFFFFFU);
     lv_obj_center(badge_label);
@@ -897,7 +903,7 @@ static lv_obj_t * create_wave_row(lv_obj_t * parent, stim_screen_t screen, bool 
     lv_obj_t * row = make_plain(parent);
     size_t index;
 
-    lv_obj_set_size(row, LV_PCT(100), compact ? 42 : 48);
+    lv_obj_set_size(row, LV_PCT(100), compact ? 52 : 56);
     lv_obj_set_style_pad_hor(row, 12, 0);
     lv_obj_set_style_pad_column(row, 8, 0);
     lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
@@ -909,7 +915,7 @@ static lv_obj_t * create_wave_row(lv_obj_t * parent, stim_screen_t screen, bool 
     for(index = 0U; index < 3U; ++index) {
         uintptr_t code = ((uintptr_t)screen << 4U) | index;
         ui.wave_buttons[screen][index] = make_button(row, wave_names[index], false, NULL);
-        lv_obj_set_height(ui.wave_buttons[screen][index], compact ? 34 : 38);
+        lv_obj_set_height(ui.wave_buttons[screen][index], STIM_TOUCH_MIN);
         lv_obj_set_flex_grow(ui.wave_buttons[screen][index], 1);
         lv_obj_add_event_cb(ui.wave_buttons[screen][index], wave_event, LV_EVENT_CLICKED,
                             (void *)code);
@@ -930,12 +936,9 @@ static void create_parameter_row(lv_obj_t * parent,
     uintptr_t base = ((uintptr_t)screen << 8U) | ((uintptr_t)parameter << 4U);
     uintptr_t slider_code = ((uintptr_t)screen << 4U) | (uintptr_t)parameter;
 
-    lv_obj_set_size(row, LV_PCT(100), compact ? 40 : 46);
+    lv_obj_set_size(row, LV_PCT(100), 52);
     lv_obj_set_style_pad_hor(row, 12, 0);
     lv_obj_set_style_pad_column(row, 8, 0);
-    lv_obj_set_style_border_color(row, color(STIM_COLOR_BORDER), 0);
-    lv_obj_set_style_border_width(row, 0, 0);
-    lv_obj_set_style_border_side(row, LV_BORDER_SIDE_BOTTOM, 0);
     lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
@@ -943,22 +946,33 @@ static void create_parameter_row(lv_obj_t * parent,
     lv_obj_set_width(title_label, compact ? 110 : 120);
 
     minus = make_button(row, "-", false, NULL);
-    lv_obj_set_size(minus, compact ? 36 : 40, compact ? 32 : 36);
+    lv_obj_set_size(minus, STIM_TOUCH_MIN, STIM_TOUCH_MIN);
     lv_obj_set_style_text_font(lv_obj_get_child(minus, 0), &lv_font_montserrat_20, 0);
     lv_obj_add_event_cb(minus, parameter_button_event, LV_EVENT_CLICKED, (void *)base);
 
     ui.parameters[screen][parameter].slider = lv_slider_create(row);
-    lv_obj_set_height(ui.parameters[screen][parameter].slider, 12);
+    lv_obj_set_height(ui.parameters[screen][parameter].slider, 8);
     lv_obj_set_flex_grow(ui.parameters[screen][parameter].slider, 1);
     lv_slider_set_range(ui.parameters[screen][parameter].slider,
                         parameter_min(screen, parameter), parameter_max(screen, parameter));
+    lv_obj_set_style_radius(ui.parameters[screen][parameter].slider, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+    lv_obj_set_style_radius(ui.parameters[screen][parameter].slider, LV_RADIUS_CIRCLE, LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(ui.parameters[screen][parameter].slider,
                               color(STIM_COLOR_DISABLED), LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui.parameters[screen][parameter].slider,
-                              color(STIM_COLOR_BLUE), LV_PART_INDICATOR);
+                              color(STIM_COLOR_GRAD_START), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_grad_color(ui.parameters[screen][parameter].slider,
+                                   color(STIM_COLOR_GRAD_END), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_grad_dir(ui.parameters[screen][parameter].slider, LV_GRAD_DIR_HOR, LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(ui.parameters[screen][parameter].slider,
-                              color(STIM_COLOR_BLUE), LV_PART_KNOB);
-    lv_obj_set_style_pad_all(ui.parameters[screen][parameter].slider, 4, LV_PART_KNOB);
+                              color(STIM_COLOR_CARD), LV_PART_KNOB);
+    lv_obj_set_style_border_width(ui.parameters[screen][parameter].slider, 2, LV_PART_KNOB);
+    lv_obj_set_style_border_color(ui.parameters[screen][parameter].slider,
+                                  color(STIM_COLOR_GRAD_END), LV_PART_KNOB);
+    lv_obj_set_style_shadow_width(ui.parameters[screen][parameter].slider, 6, LV_PART_KNOB);
+    lv_obj_set_style_shadow_color(ui.parameters[screen][parameter].slider, color(STIM_COLOR_SHADOW), LV_PART_KNOB);
+    lv_obj_set_style_shadow_opa(ui.parameters[screen][parameter].slider, LV_OPA_20, LV_PART_KNOB);
+    lv_obj_set_style_pad_all(ui.parameters[screen][parameter].slider, 9, LV_PART_KNOB);
     lv_obj_add_event_cb(ui.parameters[screen][parameter].slider, parameter_slider_event,
                         LV_EVENT_VALUE_CHANGED, (void *)slider_code);
 
@@ -968,7 +982,7 @@ static void create_parameter_row(lv_obj_t * parent,
     lv_obj_set_style_text_align(ui.parameters[screen][parameter].value_label, LV_TEXT_ALIGN_RIGHT, 0);
 
     plus = make_button(row, "+", false, NULL);
-    lv_obj_set_size(plus, compact ? 36 : 40, compact ? 32 : 36);
+    lv_obj_set_size(plus, STIM_TOUCH_MIN, STIM_TOUCH_MIN);
     lv_obj_set_style_text_font(lv_obj_get_child(plus, 0), &lv_font_montserrat_20, 0);
     lv_obj_add_event_cb(plus, parameter_button_event, LV_EVENT_CLICKED, (void *)(base | 1U));
 }
@@ -1004,14 +1018,14 @@ static lv_obj_t * create_parameter_panel(lv_obj_t * parent, stim_screen_t screen
 
     if(screen == STIM_SCREEN_LOW) {
         lv_obj_t * placement = make_button(action_row, "查看贴敷位置", false, NULL);
-        lv_obj_set_size(placement, 250, compact ? 42 : 48);
+        lv_obj_set_size(placement, 250, 48);
         lv_obj_add_event_cb(placement, placement_event, LV_EVENT_CLICKED, NULL);
     }
 
     apply = make_button(action_row,
                         screen == STIM_SCREEN_MEDIUM ? "应用到所选通道" : "配置到所选单元",
                         true, NULL);
-    lv_obj_set_height(apply, compact ? 42 : 48);
+    lv_obj_set_height(apply, 48);
     lv_obj_set_flex_grow(apply, 1);
     lv_obj_add_event_cb(apply,
                         screen == STIM_SCREEN_MEDIUM ? apply_medium_event : apply_low_event,
