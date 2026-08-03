@@ -27,7 +27,7 @@
 
 - CMake 3.24+
 - macOS：Apple Clang/Xcode Command Line Tools
-- Windows：Visual Studio 2022，安装“Desktop development with C++”
+- Windows：Visual Studio 2026，安装“Desktop development with C++”；使用支持 Visual Studio 18 2026 生成器的 CMake（Visual Studio 2026 自带版本即可）
 - 首次配置需要网络，用于获取固定版本：LVGL v9.5.0、SDL2 release-2.32.10
 
 SDL2 会由 CMake 从源码构建，不要求用户预先安装 Homebrew SDL、vcpkg 或 SDL DLL。
@@ -54,7 +54,7 @@ ctest --preset macos-debug
 
 ## Windows 构建与运行
 
-在 “Developer PowerShell for VS 2022” 中运行：
+在 “Developer PowerShell for VS 2026” 中运行：
 
 ```powershell
 cd stim-simulator
