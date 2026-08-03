@@ -972,7 +972,7 @@ static void create_parameter_row(lv_obj_t * parent,
     lv_obj_set_style_shadow_width(ui.parameters[screen][parameter].slider, 6, LV_PART_KNOB);
     lv_obj_set_style_shadow_color(ui.parameters[screen][parameter].slider, color(STIM_COLOR_SHADOW), LV_PART_KNOB);
     lv_obj_set_style_shadow_opa(ui.parameters[screen][parameter].slider, LV_OPA_20, LV_PART_KNOB);
-    lv_obj_set_style_pad_all(ui.parameters[screen][parameter].slider, 9, LV_PART_KNOB);
+    lv_obj_set_style_pad_all(ui.parameters[screen][parameter].slider, 14, LV_PART_KNOB);
     lv_obj_add_event_cb(ui.parameters[screen][parameter].slider, parameter_slider_event,
                         LV_EVENT_VALUE_CHANGED, (void *)slider_code);
 
