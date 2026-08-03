@@ -12,12 +12,13 @@
 #define STIM_COLOR_CYAN 0x16A6C9U
 #define STIM_COLOR_TEAL 0x2BB3AEU
 #define STIM_COLOR_CORAL 0xF2685CU
-#define STIM_COLOR_AMBER 0xF0A857U
+#define STIM_COLOR_AMBER 0xB4741FU
 #define STIM_COLOR_TEXT 0x33302BU
 #define STIM_COLOR_MUTED 0x8C8478U
 #define STIM_COLOR_BORDER 0xF1E9DCU
 #define STIM_COLOR_DISABLED 0xF2ECE0U
 #define STIM_COLOR_SELECTED 0xEAF0FEU
+#define STIM_COLOR_PAUSED_SOFT 0xFDF0DFU
 #define STIM_COLOR_RUNNING_SOFT 0xE4F5F3U
 #define STIM_COLOR_GRAD_START 0x22C1C3U
 #define STIM_COLOR_GRAD_END 0x5B8DEFU
@@ -95,6 +96,7 @@ static lv_obj_t * make_plain(lv_obj_t * parent)
     lv_obj_set_style_border_width(object, 0, 0);
     lv_obj_set_style_radius(object, 0, 0);
     lv_obj_set_style_pad_all(object, 0, 0);
+    lv_obj_remove_flag(object, LV_OBJ_FLAG_CLICKABLE);
     no_scroll(object);
     return object;
 }
@@ -270,7 +272,7 @@ static void refresh_channel(size_t index)
     }
     else if(channel->state == STIM_STATE_PAUSED) {
         badge_fg = STIM_COLOR_AMBER;
-        badge_bg = STIM_COLOR_SELECTED;
+        badge_bg = STIM_COLOR_PAUSED_SOFT;
         border_color = STIM_COLOR_AMBER;
     }
     else if(channel->selected) {
@@ -997,6 +999,7 @@ static lv_obj_t * create_parameter_panel(lv_obj_t * parent, stim_screen_t screen
     lv_obj_t * apply;
     size_t index;
 
+    lv_obj_set_style_pad_row(panel, 4, 0);
     lv_obj_set_width(panel, 1);
     lv_obj_set_height(panel, LV_PCT(100));
     lv_obj_set_flex_grow(panel, 1);
