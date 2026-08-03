@@ -903,7 +903,7 @@ static lv_obj_t * create_wave_row(lv_obj_t * parent, stim_screen_t screen, bool 
     lv_obj_t * row = make_plain(parent);
     size_t index;
 
-    lv_obj_set_size(row, LV_PCT(100), compact ? 52 : 56);
+    lv_obj_set_size(row, LV_PCT(100), compact ? 46 : 56);
     lv_obj_set_style_pad_hor(row, 12, 0);
     lv_obj_set_style_pad_column(row, 8, 0);
     lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
@@ -936,7 +936,7 @@ static void create_parameter_row(lv_obj_t * parent,
     uintptr_t base = ((uintptr_t)screen << 8U) | ((uintptr_t)parameter << 4U);
     uintptr_t slider_code = ((uintptr_t)screen << 4U) | (uintptr_t)parameter;
 
-    lv_obj_set_size(row, LV_PCT(100), 52);
+    lv_obj_set_size(row, LV_PCT(100), compact ? 46 : 52);
     lv_obj_set_style_pad_hor(row, 12, 0);
     lv_obj_set_style_pad_column(row, 8, 0);
     lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
@@ -1111,7 +1111,7 @@ static lv_obj_t * create_receiver_panel(lv_obj_t * parent)
     lv_obj_t * select_all;
     size_t index;
 
-    lv_obj_set_size(panel, LV_PCT(100), 280);
+    lv_obj_set_size(panel, LV_PCT(100), 322);
     lv_obj_set_flex_flow(panel, LV_FLEX_FLOW_COLUMN);
 
     header = make_plain(panel);
