@@ -34,7 +34,7 @@
 
 **Interfaces:**
 - Consumes: nothing new (modifies existing functions in place)
-- Produces: same macro names as before, new values; two new macros (`STIM_METRIC_RADIUS`, `STIM_TOUCH_MIN`) and four brand-new tokens (`STIM_COLOR_RUNNING_SOFT`, `STIM_COLOR_GRAD_START`, `STIM_COLOR_GRAD_END`, `STIM_COLOR_SHADOW`) that later tasks rely on by name. `make_panel(parent)` now also applies a soft shadow. `make_button(parent, text, primary, label_out)` keeps its exact signature but is now a pill (`LV_RADIUS_CIRCLE`), uses a horizontal gradient fill when `primary`, a neutral border when not, and dims via `bg_opa` on press instead of swapping to a hardcoded navy.
+- Produces: same macro names as before, new values; two new macros (`STIM_METRIC_RADIUS`, `STIM_TOUCH_MIN`) and four brand-new tokens (`STIM_COLOR_RUNNING_SOFT`, `STIM_COLOR_GRAD_START`, `STIM_COLOR_GRAD_END`, `STIM_COLOR_SHADOW`) that later tasks rely on by name. A new static helper `apply_button_style(lv_obj_t * button, bool primary)` holds the pill/gradient/press-opacity/shadow setup shared by `make_button` and Task 3's `make_icon_text_button` (Task 3 reuses it instead of duplicating it — see Task 3 Step 1). `make_panel(parent)` now also applies a soft shadow. `make_button(parent, text, primary, label_out)` keeps its exact signature but is now a pill (`LV_RADIUS_CIRCLE`), uses a horizontal gradient fill when `primary`, a neutral border when not, and dims via `bg_opa` on press instead of swapping to a hardcoded navy.
 
 - [ ] **Step 1: Replace the color/size macro block**
 
@@ -175,14 +175,8 @@ static lv_obj_t * make_button(lv_obj_t * parent,
 with:
 
 ```c
-static lv_obj_t * make_button(lv_obj_t * parent,
-                              const char * text,
-                              bool primary,
-                              lv_obj_t ** label_out)
+static void apply_button_style(lv_obj_t * button, bool primary)
 {
-    lv_obj_t * button = lv_button_create(parent);
-    lv_obj_t * label;
-
     lv_obj_set_style_radius(button, LV_RADIUS_CIRCLE, 0);
     lv_obj_set_style_border_width(button, primary ? 0 : 1, 0);
     lv_obj_set_style_border_color(button, color(STIM_COLOR_BORDER), 0);
@@ -192,10 +186,21 @@ static lv_obj_t * make_button(lv_obj_t * parent,
         lv_obj_set_style_bg_grad_dir(button, LV_GRAD_DIR_HOR, 0);
     }
     lv_obj_set_style_bg_opa(button, LV_OPA_80, LV_STATE_PRESSED);
-    lv_obj_set_style_text_color(button, color(primary ? 0xFFFFFFU : STIM_COLOR_TEXT), 0);
     lv_obj_set_style_pad_all(button, 6, 0);
     lv_obj_set_style_shadow_width(button, 0, 0);
     no_scroll(button);
+}
+
+static lv_obj_t * make_button(lv_obj_t * parent,
+                              const char * text,
+                              bool primary,
+                              lv_obj_t ** label_out)
+{
+    lv_obj_t * button = lv_button_create(parent);
+    lv_obj_t * label;
+
+    apply_button_style(button, primary);
+    lv_obj_set_style_text_color(button, color(primary ? 0xFFFFFFU : STIM_COLOR_TEXT), 0);
 
     label = make_label(button, text, &stim_font_16, primary ? 0xFFFFFFU : STIM_COLOR_TEXT);
     lv_obj_center(label);
@@ -206,7 +211,7 @@ static lv_obj_t * make_button(lv_obj_t * parent,
 }
 ```
 
-Two deliberate behavior changes here, not typos: the non-primary button border goes from accent-blue to neutral `STIM_COLOR_BORDER` (secondary actions should look quiet), and its label goes from `STIM_COLOR_NAVY` (now repurposed as accent blue) to `STIM_COLOR_TEXT` (so ordinary buttons read as dark text, not blue).
+`apply_button_style` is a new shared helper — it holds every style call that Task 3's `make_icon_text_button` also needs, so that function calls it too instead of repeating the same nine lines (see Task 3 Step 1). Two deliberate behavior changes here, not typos: the non-primary button border goes from accent-blue to neutral `STIM_COLOR_BORDER` (secondary actions should look quiet), and its label goes from `STIM_COLOR_NAVY` (now repurposed as accent blue) to `STIM_COLOR_TEXT` (so ordinary buttons read as dark text, not blue).
 
 - [ ] **Step 5: Strip the solid-color bar out of `make_section_header`**
 
@@ -421,7 +426,7 @@ git commit -m "style: pill segmented tab control and icon settings button"
 - Test: none (visual-only) — verify via build + `ctest` + screenshot
 
 **Interfaces:**
-- Consumes: `make_panel`, `make_button`, `make_plain`, `make_label`, `STIM_COLOR_*`, `STIM_METRIC_RADIUS`, `STIM_TOUCH_MIN` from Task 1
+- Consumes: `make_panel`, `make_button`, `make_plain`, `make_label`, `apply_button_style`, `STIM_COLOR_*`, `STIM_METRIC_RADIUS`, `STIM_TOUCH_MIN` from Task 1
 - Produces: two new static helpers used starting in this task and reused by Task 4: `style_badge(lv_obj_t * label, uint32_t fg, uint32_t bg)` and `make_icon_text_button(lv_obj_t * parent, const char * icon, const char * text, bool primary, lv_obj_t ** label_out)`. Both must be defined and called within this task (the build fails on an unused `static` function otherwise).
 
 - [ ] **Step 1: Add `style_badge` and `make_icon_text_button` right after `make_button` (orig `:147`)**
@@ -447,18 +452,7 @@ static lv_obj_t * make_icon_text_button(lv_obj_t * parent,
     lv_obj_t * row;
     lv_obj_t * text_label;
 
-    lv_obj_set_style_radius(button, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_border_width(button, primary ? 0 : 1, 0);
-    lv_obj_set_style_border_color(button, color(STIM_COLOR_BORDER), 0);
-    lv_obj_set_style_bg_color(button, color(primary ? STIM_COLOR_GRAD_START : STIM_COLOR_CARD), 0);
-    if(primary) {
-        lv_obj_set_style_bg_grad_color(button, color(STIM_COLOR_GRAD_END), 0);
-        lv_obj_set_style_bg_grad_dir(button, LV_GRAD_DIR_HOR, 0);
-    }
-    lv_obj_set_style_bg_opa(button, LV_OPA_80, LV_STATE_PRESSED);
-    lv_obj_set_style_pad_all(button, 6, 0);
-    lv_obj_set_style_shadow_width(button, 0, 0);
-    no_scroll(button);
+    apply_button_style(button, primary);
 
     row = make_plain(button);
     lv_obj_set_size(row, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -477,7 +471,7 @@ static lv_obj_t * make_icon_text_button(lv_obj_t * parent,
 }
 ```
 
-(`style_badge` gives any label a colored pill background — used for channel/receiver state text. `make_icon_text_button` is a from-scratch constructor, not a wrapper around `make_button`, because the icon glyph needs its own `lv_font_montserrat_16`-styled label — the Chinese `stim_font_16` used for the text has no symbol glyphs, so the two can never share one label.)
+(`style_badge` gives any label a colored pill background — used for channel/receiver state text. `make_icon_text_button` reuses Task 1's `apply_button_style` for the button chrome, then builds its own icon+text row — it can't reuse `make_button` itself because the icon glyph needs its own `lv_font_montserrat_16`-styled label; the Chinese `stim_font_16` used for the text has no symbol glyphs, so the two can never share one label.)
 
 - [ ] **Step 2: Restyle `create_metric` as a flat tinted chip instead of a nested shadowed panel**
 
@@ -1493,3 +1487,4 @@ git commit -m "docs: regenerate simulator screenshots for the modernized UI"
 - **Spec coverage:** every bullet in `output/ui-design/stim-ui-design-spec.md`'s "v2 现代化视觉方案" section maps to a task — design tokens/shadow/pill buttons → Task 1; Tab/gradient/图标 → Task 2; badge headers + icon buttons + touch sizing on channel cards → Task 3; badges + wifi icon + touch sizing on receiver tiles → Task 4; prescription/wave/slider/stepper/apply touch sizing → Task 5; screenshot regen + parity check → Task 6. The "不做的事" list (no layout/IA change, no dark mode, no new font weights, no new animation system, no treatment-parameter changes) has no corresponding task by design — confirmed no task above touches `src/model/*`, adds a font, or adds an `lv_anim_*` call.
 - **Placeholder scan:** no TBD/TODO, no "similar to Task N" shorthand — every step embeds the literal before/after C code.
 - **Type consistency:** `make_icon_text_button`'s signature (`lv_obj_t * parent, const char * icon, const char * text, bool primary, lv_obj_t ** label_out`) is used identically in all three Task 3 call sites; `style_badge`'s signature (`lv_obj_t * label, uint32_t fg, uint32_t bg`) matches across Task 3 and Task 4 call sites; `receiver_view_t.link_icon` is declared in Task 4 Step 1 and consumed only in Task 4 Steps 2–3 (same task, no dangling reference). `STIM_COLOR_PRESSED` was considered during design and deliberately dropped in favor of a single `LV_OPA_80`-on-press rule used consistently by both `make_button` and `make_icon_text_button` — no unused macro left behind.
+- **Duplication caught before dispatch:** the first draft of Task 3 had `make_icon_text_button` repeat `make_button`'s entire pill/gradient/press-opacity style block verbatim. Extracted that block into `apply_button_style(lv_obj_t * button, bool primary)` in Task 1 (used immediately by `make_button` in the same task, so no unused-function risk), and Task 3's `make_icon_text_button` now calls it instead of duplicating it.
