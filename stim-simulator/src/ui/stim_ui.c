@@ -655,7 +655,7 @@ static void create_header(lv_obj_t * screen)
     lv_obj_set_size(spacer, 205, 1);
 
     tabs = make_plain(header);
-    lv_obj_set_size(tabs, 400, 48);
+    lv_obj_set_size(tabs, 400, 56);
     lv_obj_set_style_bg_color(tabs, color(STIM_COLOR_DISABLED), 0);
     lv_obj_set_style_bg_opa(tabs, LV_OPA_COVER, 0);
     lv_obj_set_style_radius(tabs, LV_RADIUS_CIRCLE, 0);
