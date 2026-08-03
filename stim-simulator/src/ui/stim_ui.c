@@ -48,6 +48,7 @@ typedef struct {
     lv_obj_t * card;
     lv_obj_t * id_label;
     lv_obj_t * selection_label;
+    lv_obj_t * link_icon;
     lv_obj_t * link_label;
     lv_obj_t * prescription_label;
     lv_obj_t * time_label;
@@ -325,16 +326,22 @@ static void refresh_receiver(size_t index)
     char buffer[48];
     uint32_t border_color = STIM_COLOR_BORDER;
     uint32_t background = STIM_COLOR_CARD;
+    uint32_t badge_fg = STIM_COLOR_MUTED;
+    uint32_t badge_bg = STIM_COLOR_DISABLED;
     bool configured = (receiver->state != STIM_STATE_UNCONFIGURED) &&
                       (receiver->state != STIM_STATE_OFFLINE);
 
     if(receiver->state == STIM_STATE_RUNNING) {
         border_color = STIM_COLOR_TEAL;
-        background = 0xEAFBF9U;
+        background = STIM_COLOR_RUNNING_SOFT;
+        badge_fg = STIM_COLOR_TEAL;
+        badge_bg = STIM_COLOR_RUNNING_SOFT;
     }
     else if(receiver->selected) {
         border_color = STIM_COLOR_BLUE;
         background = STIM_COLOR_SELECTED;
+        badge_fg = STIM_COLOR_BLUE;
+        badge_bg = STIM_COLOR_SELECTED;
     }
     else if(receiver->state == STIM_STATE_OFFLINE) {
         background = STIM_COLOR_DISABLED;
@@ -346,6 +353,10 @@ static void refresh_receiver(size_t index)
     lv_obj_set_style_text_opa(view->card,
                               receiver->state == STIM_STATE_OFFLINE ? LV_OPA_60 : LV_OPA_COVER,
                               0);
+    style_badge(view->state_label, badge_fg, badge_bg);
+    lv_obj_set_style_text_color(view->link_icon,
+                                color(receiver->state == STIM_STATE_OFFLINE ? STIM_COLOR_MUTED : STIM_COLOR_TEAL),
+                                0);
 
     (void)snprintf(buffer, sizeof(buffer), "%02u号", receiver->id);
     lv_label_set_text(view->id_label, buffer);
@@ -372,7 +383,7 @@ static void refresh_receiver(size_t index)
     }
 
     if(receiver->locked && configured) {
-        lv_label_set_text(view->state_label, "已配置  锁定");
+        lv_label_set_text(view->state_label, "已配置 锁定");
     }
     else {
         lv_label_set_text(view->state_label, unit_state_text(receiver->state));
@@ -1044,11 +1055,13 @@ static void create_receiver_card(lv_obj_t * parent, size_t index)
 {
     receiver_view_t * view = &ui.receivers[index];
     lv_obj_t * title_row;
+    lv_obj_t * link_row;
 
     view->card = make_panel(parent);
     lv_obj_set_size(view->card, 197, 120);
-    lv_obj_set_style_pad_all(view->card, 4, 0);
-    lv_obj_set_style_pad_row(view->card, 1, 0);
+    lv_obj_set_style_radius(view->card, STIM_METRIC_RADIUS, 0);
+    lv_obj_set_style_pad_all(view->card, 8, 0);
+    lv_obj_set_style_pad_row(view->card, 2, 0);
     lv_obj_set_flex_flow(view->card, LV_FLEX_FLOW_COLUMN);
     lv_obj_add_flag(view->card, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(view->card, receiver_event, LV_EVENT_CLICKED, (void *)(uintptr_t)index);
@@ -1058,16 +1071,22 @@ static void create_receiver_card(lv_obj_t * parent, size_t index)
     lv_obj_set_flex_flow(title_row, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(title_row, LV_FLEX_ALIGN_SPACE_BETWEEN,
                           LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    view->id_label = make_label(title_row, "01号", &stim_font_20, STIM_COLOR_NAVY);
+    view->id_label = make_label(title_row, "01号", &stim_font_20, STIM_COLOR_TEXT);
     view->selection_label = make_label(title_row, "", &stim_font_16, STIM_COLOR_BLUE);
 
-    view->link_label = make_label(view->card, "无线在线  电量 90%", &stim_font_16, STIM_COLOR_MUTED);
-    lv_obj_set_width(view->link_label, LV_PCT(100));
+    link_row = make_plain(view->card);
+    lv_obj_set_size(link_row, LV_PCT(100), 16);
+    lv_obj_set_flex_flow(link_row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(link_row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(link_row, 4, 0);
+    view->link_icon = make_label(link_row, LV_SYMBOL_WIFI, &lv_font_montserrat_14, STIM_COLOR_MUTED);
+    view->link_label = make_label(link_row, "无线在线  电量 90%", &stim_font_16, STIM_COLOR_MUTED);
+
     view->prescription_label = make_label(view->card, "待配置", &stim_font_16, STIM_COLOR_TEXT);
     lv_obj_set_width(view->prescription_label, LV_PCT(100));
     view->time_label = make_label(view->card, "--:--", &lv_font_montserrat_20, STIM_COLOR_NAVY);
     view->state_label = make_label(view->card, "待配置", &stim_font_16, STIM_COLOR_MUTED);
-    lv_obj_set_width(view->state_label, LV_PCT(100));
+    style_badge(view->state_label, STIM_COLOR_MUTED, STIM_COLOR_DISABLED);
 }
 
 static lv_obj_t * create_receiver_panel(lv_obj_t * parent)
@@ -1083,18 +1102,15 @@ static lv_obj_t * create_receiver_panel(lv_obj_t * parent)
 
     header = make_plain(panel);
     lv_obj_set_size(header, LV_PCT(100), 48);
-    lv_obj_set_style_bg_color(header, color(STIM_COLOR_NAVY), 0);
-    lv_obj_set_style_bg_opa(header, LV_OPA_COVER, 0);
-    lv_obj_set_style_radius(header, STIM_PANEL_RADIUS, 0);
     lv_obj_set_style_pad_hor(header, 16, 0);
     lv_obj_set_flex_flow(header, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(header, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(header, 18, 0);
-    (void)make_label(header, "治疗单元", &stim_font_20, 0xFFFFFFU);
-    lv_obj_t * summary = make_label(header, "在线 10 / 12", &stim_font_16, 0xFFFFFFU);
+    (void)make_label(header, "治疗单元", &stim_font_20, STIM_COLOR_TEXT);
+    lv_obj_t * summary = make_label(header, "在线 10 / 12", &stim_font_16, STIM_COLOR_MUTED);
     lv_obj_set_flex_grow(summary, 1);
     select_all = make_button(header, "全选", false, NULL);
-    lv_obj_set_size(select_all, 88, 36);
+    lv_obj_set_size(select_all, 88, STIM_TOUCH_MIN);
     lv_obj_add_event_cb(select_all, select_all_event, LV_EVENT_CLICKED, NULL);
 
     units = make_plain(panel);
