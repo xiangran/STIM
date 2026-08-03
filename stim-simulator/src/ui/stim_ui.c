@@ -5,24 +5,30 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define STIM_COLOR_BG 0xF4F7FAU
+#define STIM_COLOR_BG 0xFBF8F3U
 #define STIM_COLOR_CARD 0xFFFFFFU
-#define STIM_COLOR_NAVY 0x0B4F8AU
-#define STIM_COLOR_BLUE 0x0A61B8U
+#define STIM_COLOR_NAVY 0x5B8DEFU
+#define STIM_COLOR_BLUE 0x5B8DEFU
 #define STIM_COLOR_CYAN 0x16A6C9U
-#define STIM_COLOR_TEAL 0x159A99U
-#define STIM_COLOR_CORAL 0xE45F5FU
-#define STIM_COLOR_AMBER 0xC98518U
-#define STIM_COLOR_TEXT 0x17324DU
-#define STIM_COLOR_MUTED 0x708399U
-#define STIM_COLOR_BORDER 0xD8E1EAU
-#define STIM_COLOR_DISABLED 0xEEF2F6U
-#define STIM_COLOR_SELECTED 0xEAF4FFU
+#define STIM_COLOR_TEAL 0x2BB3AEU
+#define STIM_COLOR_CORAL 0xF2685CU
+#define STIM_COLOR_AMBER 0xF0A857U
+#define STIM_COLOR_TEXT 0x33302BU
+#define STIM_COLOR_MUTED 0x8C8478U
+#define STIM_COLOR_BORDER 0xF1E9DCU
+#define STIM_COLOR_DISABLED 0xF2ECE0U
+#define STIM_COLOR_SELECTED 0xEAF0FEU
+#define STIM_COLOR_RUNNING_SOFT 0xE4F5F3U
+#define STIM_COLOR_GRAD_START 0x22C1C3U
+#define STIM_COLOR_GRAD_END 0x5B8DEFU
+#define STIM_COLOR_SHADOW 0x8C6E46U
 
 #define STIM_HEADER_HEIGHT 64
 #define STIM_PAGE_TOP 64
 #define STIM_PAGE_HEIGHT 736
-#define STIM_PANEL_RADIUS 12
+#define STIM_PANEL_RADIUS 20
+#define STIM_METRIC_RADIUS 12
+#define STIM_TOUCH_MIN 44
 
 typedef struct {
     lv_obj_t * card;
@@ -102,6 +108,11 @@ static lv_obj_t * make_panel(lv_obj_t * parent)
     lv_obj_set_style_border_width(panel, 1, 0);
     lv_obj_set_style_radius(panel, STIM_PANEL_RADIUS, 0);
     lv_obj_set_style_pad_all(panel, 0, 0);
+    lv_obj_set_style_shadow_width(panel, 20, 0);
+    lv_obj_set_style_shadow_offset_y(panel, 6, 0);
+    lv_obj_set_style_shadow_spread(panel, 0, 0);
+    lv_obj_set_style_shadow_color(panel, color(STIM_COLOR_SHADOW), 0);
+    lv_obj_set_style_shadow_opa(panel, LV_OPA_10, 0);
     no_scroll(panel);
     return panel;
 }
@@ -120,6 +131,22 @@ static lv_obj_t * make_label(lv_obj_t * parent,
     return label;
 }
 
+static void apply_button_style(lv_obj_t * button, bool primary)
+{
+    lv_obj_set_style_radius(button, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_border_width(button, primary ? 0 : 1, 0);
+    lv_obj_set_style_border_color(button, color(STIM_COLOR_BORDER), 0);
+    lv_obj_set_style_bg_color(button, color(primary ? STIM_COLOR_GRAD_START : STIM_COLOR_CARD), 0);
+    if(primary) {
+        lv_obj_set_style_bg_grad_color(button, color(STIM_COLOR_GRAD_END), 0);
+        lv_obj_set_style_bg_grad_dir(button, LV_GRAD_DIR_HOR, 0);
+    }
+    lv_obj_set_style_bg_opa(button, LV_OPA_80, LV_STATE_PRESSED);
+    lv_obj_set_style_pad_all(button, 6, 0);
+    lv_obj_set_style_shadow_width(button, 0, 0);
+    no_scroll(button);
+}
+
 static lv_obj_t * make_button(lv_obj_t * parent,
                               const char * text,
                               bool primary,
@@ -128,17 +155,10 @@ static lv_obj_t * make_button(lv_obj_t * parent,
     lv_obj_t * button = lv_button_create(parent);
     lv_obj_t * label;
 
-    lv_obj_set_style_radius(button, 8, 0);
-    lv_obj_set_style_border_width(button, primary ? 0 : 1, 0);
-    lv_obj_set_style_border_color(button, color(STIM_COLOR_BLUE), 0);
-    lv_obj_set_style_bg_color(button, color(primary ? STIM_COLOR_BLUE : STIM_COLOR_CARD), 0);
-    lv_obj_set_style_bg_color(button, color(0x074E96U), LV_STATE_PRESSED);
-    lv_obj_set_style_text_color(button, color(primary ? 0xFFFFFFU : STIM_COLOR_NAVY), 0);
-    lv_obj_set_style_pad_all(button, 6, 0);
-    lv_obj_set_style_shadow_width(button, 0, 0);
-    no_scroll(button);
+    apply_button_style(button, primary);
+    lv_obj_set_style_text_color(button, color(primary ? 0xFFFFFFU : STIM_COLOR_TEXT), 0);
 
-    label = make_label(button, text, &stim_font_16, primary ? 0xFFFFFFU : STIM_COLOR_NAVY);
+    label = make_label(button, text, &stim_font_16, primary ? 0xFFFFFFU : STIM_COLOR_TEXT);
     lv_obj_center(label);
     if(label_out != NULL) {
         *label_out = label;
@@ -150,15 +170,12 @@ static lv_obj_t * make_section_header(lv_obj_t * parent, const char * title)
 {
     lv_obj_t * header = make_plain(parent);
 
-    lv_obj_set_size(header, LV_PCT(100), 48);
-    lv_obj_set_style_bg_color(header, color(STIM_COLOR_NAVY), 0);
-    lv_obj_set_style_bg_opa(header, LV_OPA_COVER, 0);
-    lv_obj_set_style_radius(header, STIM_PANEL_RADIUS, 0);
+    lv_obj_set_size(header, LV_PCT(100), 44);
     lv_obj_set_style_pad_left(header, 16, 0);
     lv_obj_set_flex_flow(header, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(header, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-    (void)make_label(header, title, &stim_font_20, 0xFFFFFFU);
+    (void)make_label(header, title, &stim_font_20, STIM_COLOR_TEXT);
     return header;
 }
 
