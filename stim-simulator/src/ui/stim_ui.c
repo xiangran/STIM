@@ -5,27 +5,27 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define STIM_COLOR_BG 0xF1F3F5U
+#define STIM_COLOR_BG 0xF4F7FAU
 #define STIM_COLOR_CARD 0xFFFFFFU
-#define STIM_COLOR_NAVY 0x1976D2U
-#define STIM_COLOR_BLUE 0x1976D2U
+#define STIM_COLOR_NAVY 0x0B4F8AU
+#define STIM_COLOR_BLUE 0x0A61B8U
 #define STIM_COLOR_CYAN 0x16A6C9U
-#define STIM_COLOR_TEAL 0x00897BU
-#define STIM_COLOR_CORAL 0xD32F2FU
-#define STIM_COLOR_AMBER 0xEF6C00U
-#define STIM_COLOR_TEXT 0x212121U
-#define STIM_COLOR_MUTED 0x757575U
-#define STIM_COLOR_BORDER 0xBDBDBDU
-#define STIM_COLOR_DISABLED 0xEEEEEEU
-#define STIM_COLOR_SELECTED 0xE3F2FDU
-#define STIM_COLOR_PAUSED_SOFT 0xFDF0DFU
-#define STIM_COLOR_RUNNING_SOFT 0xE0F2F1U
-#define STIM_COLOR_SHADOW 0x000000U
+#define STIM_COLOR_TEAL 0x159A99U
+#define STIM_COLOR_CORAL 0xE45F5FU
+#define STIM_COLOR_AMBER 0xC98518U
+#define STIM_COLOR_TEXT 0x17324DU
+#define STIM_COLOR_MUTED 0x708399U
+#define STIM_COLOR_BORDER 0xD8E1EAU
+#define STIM_COLOR_DISABLED 0xEEF2F6U
+#define STIM_COLOR_SELECTED 0xEAF4FFU
+#define STIM_COLOR_PAUSED_SOFT 0xFBF1DFU
+#define STIM_COLOR_RUNNING_SOFT 0xE8F6F5U
+#define STIM_COLOR_SHADOW 0x0B2F4FU
 
 #define STIM_HEADER_HEIGHT 64
 #define STIM_PAGE_TOP 64
 #define STIM_PAGE_HEIGHT 736
-#define STIM_PANEL_RADIUS 16
+#define STIM_PANEL_RADIUS 12
 #define STIM_METRIC_RADIUS 8
 #define STIM_BUTTON_RADIUS 8
 #define STIM_TOUCH_MIN 44
@@ -130,14 +130,15 @@ static lv_obj_t * make_panel(lv_obj_t * parent)
 
     lv_obj_set_style_bg_color(panel, color(STIM_COLOR_CARD), 0);
     lv_obj_set_style_bg_opa(panel, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_width(panel, 0, 0);
+    lv_obj_set_style_border_color(panel, color(STIM_COLOR_BORDER), 0);
+    lv_obj_set_style_border_width(panel, 1, 0);
     lv_obj_set_style_radius(panel, STIM_PANEL_RADIUS, 0);
     lv_obj_set_style_pad_all(panel, 0, 0);
-    lv_obj_set_style_shadow_width(panel, 20, 0);
-    lv_obj_set_style_shadow_offset_y(panel, 6, 0);
+    lv_obj_set_style_shadow_width(panel, 12, 0);
+    lv_obj_set_style_shadow_offset_y(panel, 2, 0);
     lv_obj_set_style_shadow_spread(panel, 0, 0);
     lv_obj_set_style_shadow_color(panel, color(STIM_COLOR_SHADOW), 0);
-    lv_obj_set_style_shadow_opa(panel, LV_OPA_20, 0);
+    lv_obj_set_style_shadow_opa(panel, LV_OPA_10, 0);
     no_scroll(panel);
     return panel;
 }
@@ -225,16 +226,20 @@ static lv_obj_t * make_icon_text_button(lv_obj_t * parent,
     return button;
 }
 
-static lv_obj_t * make_section_header(lv_obj_t * parent, const char * title)
+static lv_obj_t * make_section_header(lv_obj_t * parent, const char * icon, const char * title)
 {
     lv_obj_t * header = make_plain(parent);
 
     lv_obj_set_size(header, LV_PCT(100), 44);
+    lv_obj_set_style_bg_color(header, color(STIM_COLOR_NAVY), 0);
+    lv_obj_set_style_bg_opa(header, LV_OPA_COVER, 0);
     lv_obj_set_style_pad_left(header, 16, 0);
+    lv_obj_set_style_pad_column(header, 10, 0);
     lv_obj_set_flex_flow(header, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(header, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-    (void)make_label(header, title, &stim_font_20, STIM_COLOR_TEXT);
+    (void)make_label(header, icon, &lv_font_montserrat_16, 0xFFFFFFU);
+    (void)make_label(header, title, &stim_font_20, 0xFFFFFFU);
     return header;
 }
 
@@ -723,11 +728,9 @@ static void create_header(lv_obj_t * screen)
 
     lv_obj_set_size(header, LV_PCT(100), STIM_HEADER_HEIGHT);
     lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
-    lv_obj_set_style_bg_color(header, color(STIM_COLOR_CARD), 0);
+    lv_obj_set_style_bg_color(header, color(STIM_COLOR_NAVY), 0);
     lv_obj_set_style_bg_opa(header, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_color(header, color(STIM_COLOR_BORDER), 0);
     lv_obj_set_style_border_width(header, 0, 0);
-    lv_obj_set_style_border_side(header, LV_BORDER_SIDE_BOTTOM, 0);
     lv_obj_set_style_pad_hor(header, 16, 0);
     lv_obj_set_flex_flow(header, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(header, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -737,9 +740,6 @@ static void create_header(lv_obj_t * screen)
 
     tabs = make_plain(header);
     lv_obj_set_size(tabs, 400, 56);
-    lv_obj_set_style_bg_color(tabs, color(STIM_COLOR_DISABLED), 0);
-    lv_obj_set_style_bg_opa(tabs, LV_OPA_COVER, 0);
-    lv_obj_set_style_radius(tabs, STIM_BUTTON_RADIUS, 0);
     lv_obj_set_style_pad_all(tabs, 4, 0);
     lv_obj_set_flex_flow(tabs, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_column(tabs, 4, 0);
@@ -763,11 +763,15 @@ static void create_header(lv_obj_t * screen)
     lv_obj_set_flex_flow(right, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(right, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(right, 16, 0);
-    (void)make_label(right, "14:28", &lv_font_montserrat_24, STIM_COLOR_TEXT);
+    (void)make_label(right, "14:28", &lv_font_montserrat_24, 0xFFFFFFU);
 
     settings = make_button(right, LV_SYMBOL_SETTINGS, false, NULL);
     lv_obj_set_size(settings, STIM_TOUCH_MIN, STIM_TOUCH_MIN);
+    lv_obj_set_style_bg_opa(settings, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(settings, 0, 0);
+    lv_obj_set_style_text_color(settings, color(0xFFFFFFU), 0);
     lv_obj_set_style_text_font(lv_obj_get_child(settings, 0), &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(lv_obj_get_child(settings, 0), color(0xFFFFFFU), 0);
     lv_obj_add_event_cb(settings, settings_event, LV_EVENT_CLICKED, NULL);
 }
 
@@ -901,7 +905,8 @@ static lv_obj_t * create_prescription_panel(lv_obj_t * parent, stim_screen_t scr
     lv_obj_set_width(panel, 420);
     lv_obj_set_height(panel, LV_PCT(100));
     lv_obj_set_flex_flow(panel, LV_FLEX_FLOW_COLUMN);
-    (void)make_section_header(panel, "处方");
+    lv_obj_set_style_clip_corner(panel, true, 0);
+    (void)make_section_header(panel, LV_SYMBOL_FILE, "处方");
 
     content = make_plain(panel);
     lv_obj_set_width(content, LV_PCT(100));
@@ -1019,7 +1024,9 @@ static lv_obj_t * create_parameter_panel(lv_obj_t * parent, stim_screen_t screen
     lv_obj_set_height(panel, LV_PCT(100));
     lv_obj_set_flex_grow(panel, 1);
     lv_obj_set_flex_flow(panel, LV_FLEX_FLOW_COLUMN);
-    (void)make_section_header(panel, screen == STIM_SCREEN_MEDIUM ? "处方参数" : "批量配置");
+    lv_obj_set_style_clip_corner(panel, true, 0);
+    (void)make_section_header(panel, LV_SYMBOL_SETTINGS,
+                              screen == STIM_SCREEN_MEDIUM ? "处方参数" : "批量配置");
     (void)create_wave_row(panel, screen, compact);
 
     for(index = 0U; index < 4U; ++index) {
@@ -1210,16 +1217,12 @@ void stim_ui_create(stim_model_t * model)
 static void set_tab_active(lv_obj_t * tab, bool active)
 {
     lv_obj_t * label = lv_obj_get_child(tab, 0);
+    uint32_t text_color = active ? STIM_COLOR_NAVY : 0xFFFFFFU;
 
-    if(active) {
-        lv_obj_set_style_bg_color(tab, color(STIM_COLOR_BLUE), 0);
-        lv_obj_set_style_bg_opa(tab, LV_OPA_COVER, 0);
-    }
-    else {
-        lv_obj_set_style_bg_opa(tab, LV_OPA_TRANSP, 0);
-    }
-    lv_obj_set_style_text_color(tab, color(active ? 0xFFFFFFU : STIM_COLOR_MUTED), 0);
-    lv_obj_set_style_text_color(label, color(active ? 0xFFFFFFU : STIM_COLOR_MUTED), 0);
+    lv_obj_set_style_bg_color(tab, color(STIM_COLOR_CARD), 0);
+    lv_obj_set_style_bg_opa(tab, active ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
+    lv_obj_set_style_text_color(tab, color(text_color), 0);
+    lv_obj_set_style_text_color(label, color(text_color), 0);
 }
 
 void stim_ui_show_screen(stim_screen_t screen)
