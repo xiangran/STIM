@@ -390,12 +390,12 @@ static void refresh_receiver(size_t index)
     lv_label_set_text(view->selection_label, receiver->selected ? "已选" : "");
 
     if(receiver->state == STIM_STATE_OFFLINE) {
-        lv_label_set_text(view->link_label, "无线 --  电量 --");
+        lv_label_set_text(view->link_label, "USB --  电量 --");
         lv_label_set_text(view->prescription_label, "离线");
         lv_label_set_text(view->time_label, "--:--");
     }
     else {
-        (void)snprintf(buffer, sizeof(buffer), "无线在线  电量 %u%%", receiver->battery_percent);
+        (void)snprintf(buffer, sizeof(buffer), "USB已连接  电量 %u%%", receiver->battery_percent);
         lv_label_set_text(view->link_label, buffer);
         lv_label_set_text(view->prescription_label,
                           configured && (receiver->prescription != NULL) ?
@@ -988,7 +988,8 @@ static void create_parameter_row(lv_obj_t * parent,
     lv_obj_set_style_shadow_width(ui.parameters[screen][parameter].slider, 6, LV_PART_KNOB);
     lv_obj_set_style_shadow_color(ui.parameters[screen][parameter].slider, color(STIM_COLOR_SHADOW), LV_PART_KNOB);
     lv_obj_set_style_shadow_opa(ui.parameters[screen][parameter].slider, LV_OPA_20, LV_PART_KNOB);
-    lv_obj_set_style_pad_all(ui.parameters[screen][parameter].slider, 14, LV_PART_KNOB);
+    lv_obj_set_style_pad_all(ui.parameters[screen][parameter].slider, 6, LV_PART_KNOB);
+    lv_obj_set_ext_click_area(ui.parameters[screen][parameter].slider, 14);
     lv_obj_add_event_cb(ui.parameters[screen][parameter].slider, parameter_slider_event,
                         LV_EVENT_VALUE_CHANGED, (void *)slider_code);
 
@@ -1112,8 +1113,8 @@ static void create_receiver_card(lv_obj_t * parent, size_t index)
     lv_obj_set_flex_flow(link_row, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(link_row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(link_row, 4, 0);
-    view->link_icon = make_label(link_row, LV_SYMBOL_WIFI, &lv_font_montserrat_14, STIM_COLOR_MUTED);
-    view->link_label = make_label(link_row, "无线在线  电量 90%", &stim_font_16, STIM_COLOR_MUTED);
+    view->link_icon = make_label(link_row, LV_SYMBOL_USB, &lv_font_montserrat_14, STIM_COLOR_MUTED);
+    view->link_label = make_label(link_row, "USB已连接  电量 90%", &stim_font_16, STIM_COLOR_MUTED);
 
     view->prescription_label = make_label(view->card, "待配置", &stim_font_16, STIM_COLOR_TEXT);
     lv_obj_set_width(view->prescription_label, LV_PCT(100));
