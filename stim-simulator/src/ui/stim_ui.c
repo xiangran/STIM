@@ -34,6 +34,7 @@ typedef struct {
     lv_obj_t * card;
     lv_obj_t * header;
     lv_obj_t * title_label;
+    lv_obj_t * state_badge;
     lv_obj_t * state_label;
     lv_obj_t * prescription_label;
     lv_obj_t * time_label;
@@ -47,11 +48,13 @@ typedef struct {
 typedef struct {
     lv_obj_t * card;
     lv_obj_t * id_label;
-    lv_obj_t * selection_label;
+    lv_obj_t * state_badge;
     lv_obj_t * link_icon;
+    lv_obj_t * battery_icon;
     lv_obj_t * link_label;
     lv_obj_t * prescription_label;
     lv_obj_t * time_label;
+    lv_obj_t * state_dot;
     lv_obj_t * state_label;
 } receiver_view_t;
 
@@ -188,14 +191,42 @@ static lv_obj_t * make_button(lv_obj_t * parent,
     return button;
 }
 
-static void style_badge(lv_obj_t * label, uint32_t fg, uint32_t bg)
+static lv_obj_t * make_icon_badge(lv_obj_t * parent, int32_t size)
 {
-    lv_obj_set_style_text_color(label, color(fg), 0);
-    lv_obj_set_style_bg_color(label, color(bg), 0);
-    lv_obj_set_style_bg_opa(label, LV_OPA_COVER, 0);
-    lv_obj_set_style_radius(label, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_pad_hor(label, 8, 0);
-    lv_obj_set_style_pad_ver(label, 3, 0);
+    lv_obj_t * badge = make_plain(parent);
+    lv_obj_t * icon;
+
+    lv_obj_set_size(badge, size, size);
+    lv_obj_set_style_radius(badge, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(badge, LV_OPA_COVER, 0);
+
+    icon = make_label(badge, LV_SYMBOL_MINUS, &lv_font_montserrat_14, 0xFFFFFFU);
+    lv_obj_center(icon);
+    return badge;
+}
+
+static void set_icon_badge(lv_obj_t * badge, const char * icon, uint32_t bg, lv_opa_t bg_opa)
+{
+    lv_obj_set_style_bg_color(badge, color(bg), 0);
+    lv_obj_set_style_bg_opa(badge, bg_opa, 0);
+    lv_label_set_text(lv_obj_get_child(badge, 0), icon);
+}
+
+static const char * battery_symbol(uint8_t percent)
+{
+    if(percent >= 90U) {
+        return LV_SYMBOL_BATTERY_FULL;
+    }
+    if(percent >= 70U) {
+        return LV_SYMBOL_BATTERY_3;
+    }
+    if(percent >= 45U) {
+        return LV_SYMBOL_BATTERY_2;
+    }
+    if(percent >= 20U) {
+        return LV_SYMBOL_BATTERY_1;
+    }
+    return LV_SYMBOL_BATTERY_EMPTY;
 }
 
 static lv_obj_t * make_icon_text_button(lv_obj_t * parent,
@@ -277,47 +308,48 @@ static const char * unit_state_text(stim_unit_state_t state)
     }
 }
 
-static void set_card_elevation(lv_obj_t * card, bool elevated)
-{
-    lv_obj_set_style_shadow_opa(card, elevated ? LV_OPA_30 : LV_OPA_20, 0);
-    lv_obj_set_style_shadow_width(card, elevated ? 28 : 20, 0);
-    lv_obj_set_style_shadow_offset_y(card, elevated ? 8 : 6, 0);
-}
-
 static void refresh_channel(size_t index)
 {
     stim_channel_t * channel = &ui.model->channels[index];
     channel_view_t * view = &ui.channels[index];
     char buffer[32];
-    uint32_t badge_fg = STIM_COLOR_MUTED;
-    uint32_t badge_bg = STIM_COLOR_DISABLED;
+    const char * badge_icon = LV_SYMBOL_MINUS;
+    uint32_t header_bg = STIM_COLOR_NAVY;
     uint32_t card_bg = STIM_COLOR_CARD;
-    bool elevated = false;
+    uint32_t border_color = STIM_COLOR_BORDER;
+    int32_t border_width = 1;
     bool configured = channel->state != STIM_STATE_UNCONFIGURED;
     bool active = (channel->state == STIM_STATE_RUNNING) || (channel->state == STIM_STATE_PAUSED);
 
     if(channel->state == STIM_STATE_RUNNING) {
-        badge_fg = 0xFFFFFFU;
-        badge_bg = STIM_COLOR_TEAL;
+        badge_icon = LV_SYMBOL_PLAY;
+        header_bg = STIM_COLOR_TEAL;
         card_bg = STIM_COLOR_RUNNING_SOFT;
-        elevated = true;
+        border_color = STIM_COLOR_TEAL;
+        border_width = 2;
     }
     else if(channel->state == STIM_STATE_PAUSED) {
-        badge_fg = 0xFFFFFFU;
-        badge_bg = STIM_COLOR_AMBER;
+        badge_icon = LV_SYMBOL_PAUSE;
+        header_bg = STIM_COLOR_AMBER;
         card_bg = STIM_COLOR_PAUSED_SOFT;
-        elevated = true;
+        border_color = STIM_COLOR_AMBER;
+        border_width = 2;
     }
-    else if(channel->selected) {
-        badge_fg = 0xFFFFFFU;
-        badge_bg = STIM_COLOR_BLUE;
-        card_bg = STIM_COLOR_SELECTED;
-        elevated = true;
+    else if(channel->state == STIM_STATE_READY) {
+        badge_icon = LV_SYMBOL_OK;
     }
 
-    style_badge(view->state_label, badge_fg, badge_bg);
+    if(channel->selected && !active) {
+        card_bg = STIM_COLOR_SELECTED;
+        border_color = STIM_COLOR_BLUE;
+        border_width = 2;
+    }
+
+    set_icon_badge(view->state_badge, badge_icon, 0xFFFFFFU, LV_OPA_30);
+    lv_obj_set_style_bg_color(view->header, color(header_bg), 0);
     lv_obj_set_style_bg_color(view->card, color(card_bg), 0);
-    set_card_elevation(view->card, elevated);
+    lv_obj_set_style_border_color(view->card, color(border_color), 0);
+    lv_obj_set_style_border_width(view->card, border_width, 0);
 
     (void)snprintf(buffer, sizeof(buffer), "%c通道", channel->id);
     lv_label_set_text(view->title_label, buffer);
@@ -357,49 +389,57 @@ static void refresh_receiver(size_t index)
     stim_receiver_t * receiver = &ui.model->receivers[index];
     receiver_view_t * view = &ui.receivers[index];
     char buffer[48];
+    const char * badge_icon = LV_SYMBOL_MINUS;
+    uint32_t badge_bg = STIM_COLOR_MUTED;
     uint32_t background = STIM_COLOR_CARD;
-    uint32_t badge_fg = STIM_COLOR_MUTED;
-    uint32_t badge_bg = STIM_COLOR_DISABLED;
-    bool elevated = false;
-    bool configured = (receiver->state != STIM_STATE_UNCONFIGURED) &&
-                      (receiver->state != STIM_STATE_OFFLINE);
+    uint32_t border_color = STIM_COLOR_BORDER;
+    uint32_t accent = STIM_COLOR_MUTED;
+    int32_t border_width = 1;
+    bool offline = receiver->state == STIM_STATE_OFFLINE;
+    bool configured = (receiver->state != STIM_STATE_UNCONFIGURED) && !offline;
 
     if(receiver->state == STIM_STATE_RUNNING) {
-        background = STIM_COLOR_RUNNING_SOFT;
-        badge_fg = 0xFFFFFFU;
+        badge_icon = LV_SYMBOL_PLAY;
         badge_bg = STIM_COLOR_TEAL;
-        elevated = true;
+        background = STIM_COLOR_RUNNING_SOFT;
+        border_color = STIM_COLOR_TEAL;
+        border_width = 2;
+        accent = STIM_COLOR_TEAL;
     }
     else if(receiver->selected) {
-        background = STIM_COLOR_SELECTED;
-        badge_fg = 0xFFFFFFU;
+        badge_icon = LV_SYMBOL_OK;
         badge_bg = STIM_COLOR_BLUE;
-        elevated = true;
+        background = STIM_COLOR_SELECTED;
+        border_color = STIM_COLOR_BLUE;
+        border_width = 2;
+        accent = STIM_COLOR_BLUE;
     }
-    else if(receiver->state == STIM_STATE_OFFLINE) {
+    else if(offline) {
         background = STIM_COLOR_DISABLED;
     }
 
+    set_icon_badge(view->state_badge, badge_icon, badge_bg, LV_OPA_COVER);
     lv_obj_set_style_bg_color(view->card, color(background), 0);
-    set_card_elevation(view->card, elevated);
-    lv_obj_set_style_text_opa(view->card,
-                              receiver->state == STIM_STATE_OFFLINE ? LV_OPA_60 : LV_OPA_COVER,
-                              0);
-    style_badge(view->state_label, badge_fg, badge_bg);
+    lv_obj_set_style_border_color(view->card, color(border_color), 0);
+    lv_obj_set_style_border_width(view->card, border_width, 0);
+    lv_obj_set_style_text_opa(view->card, offline ? LV_OPA_60 : LV_OPA_COVER, 0);
     lv_obj_set_style_text_color(view->link_icon,
-                                color(receiver->state == STIM_STATE_OFFLINE ? STIM_COLOR_MUTED : STIM_COLOR_TEAL),
-                                0);
+                                color(offline ? STIM_COLOR_MUTED : STIM_COLOR_TEAL), 0);
+    lv_obj_set_style_text_color(view->battery_icon,
+                                color(offline ? STIM_COLOR_MUTED : STIM_COLOR_TEAL), 0);
+    lv_obj_set_style_text_color(view->state_dot, color(accent), 0);
 
     (void)snprintf(buffer, sizeof(buffer), "%02u号", receiver->id);
     lv_label_set_text(view->id_label, buffer);
-    lv_label_set_text(view->selection_label, receiver->selected ? "已选" : "");
 
-    if(receiver->state == STIM_STATE_OFFLINE) {
+    if(offline) {
+        lv_label_set_text(view->battery_icon, LV_SYMBOL_BATTERY_EMPTY);
         lv_label_set_text(view->link_label, "USB --  电量 --");
         lv_label_set_text(view->prescription_label, "离线");
         lv_label_set_text(view->time_label, "--:--");
     }
     else {
+        lv_label_set_text(view->battery_icon, battery_symbol(receiver->battery_percent));
         (void)snprintf(buffer, sizeof(buffer), "USB已连接  电量 %u%%", receiver->battery_percent);
         lv_label_set_text(view->link_label, buffer);
         lv_label_set_text(view->prescription_label,
@@ -801,6 +841,7 @@ static void create_channel_card(lv_obj_t * parent, size_t index)
     lv_obj_t * body;
     lv_obj_t * metrics;
     lv_obj_t * controls;
+    lv_obj_t * state_group;
     uintptr_t base = (uintptr_t)(index << 4U);
 
     view->card = make_panel(parent);
@@ -811,15 +852,25 @@ static void create_channel_card(lv_obj_t * parent, size_t index)
     lv_obj_add_flag(view->card, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(view->card, channel_card_event, LV_EVENT_CLICKED, (void *)(uintptr_t)index);
 
+    lv_obj_set_style_clip_corner(view->card, true, 0);
+
     view->header = make_plain(view->card);
     lv_obj_set_size(view->header, LV_PCT(100), 48);
+    lv_obj_set_style_bg_color(view->header, color(STIM_COLOR_NAVY), 0);
+    lv_obj_set_style_bg_opa(view->header, LV_OPA_COVER, 0);
     lv_obj_set_style_pad_hor(view->header, 14, 0);
     lv_obj_set_flex_flow(view->header, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(view->header, LV_FLEX_ALIGN_SPACE_BETWEEN,
                           LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    view->title_label = make_label(view->header, "A通道", &stim_font_20, STIM_COLOR_TEXT);
-    view->state_label = make_label(view->header, "就绪", &stim_font_16, STIM_COLOR_MUTED);
-    style_badge(view->state_label, STIM_COLOR_MUTED, STIM_COLOR_DISABLED);
+    view->title_label = make_label(view->header, "A通道", &stim_font_20, 0xFFFFFFU);
+
+    state_group = make_plain(view->header);
+    lv_obj_set_size(state_group, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(state_group, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(state_group, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(state_group, 6, 0);
+    view->state_badge = make_icon_badge(state_group, 22);
+    view->state_label = make_label(state_group, "就绪", &stim_font_16, 0xFFFFFFU);
 
     body = make_plain(view->card);
     lv_obj_set_width(body, LV_PCT(100));
@@ -1097,6 +1148,7 @@ static void create_receiver_card(lv_obj_t * parent, size_t index)
     receiver_view_t * view = &ui.receivers[index];
     lv_obj_t * title_row;
     lv_obj_t * link_row;
+    lv_obj_t * state_row;
 
     view->card = make_panel(parent);
     lv_obj_set_size(view->card, 197, 120);
@@ -1108,26 +1160,34 @@ static void create_receiver_card(lv_obj_t * parent, size_t index)
     lv_obj_add_event_cb(view->card, receiver_event, LV_EVENT_CLICKED, (void *)(uintptr_t)index);
 
     title_row = make_plain(view->card);
-    lv_obj_set_size(title_row, LV_PCT(100), 22);
+    lv_obj_set_size(title_row, LV_PCT(100), 24);
     lv_obj_set_flex_flow(title_row, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(title_row, LV_FLEX_ALIGN_SPACE_BETWEEN,
                           LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    view->id_label = make_label(title_row, "01号", &stim_font_20, STIM_COLOR_TEXT);
-    view->selection_label = make_label(title_row, "", &stim_font_16, STIM_COLOR_BLUE);
+    view->id_label = make_label(title_row, "01号", &stim_font_20, STIM_COLOR_NAVY);
+    view->state_badge = make_icon_badge(title_row, 22);
 
     link_row = make_plain(view->card);
     lv_obj_set_size(link_row, LV_PCT(100), 16);
     lv_obj_set_flex_flow(link_row, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(link_row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(link_row, 4, 0);
-    view->link_icon = make_label(link_row, LV_SYMBOL_USB, &lv_font_montserrat_14, STIM_COLOR_MUTED);
+    view->link_icon = make_label(link_row, LV_SYMBOL_USB, &lv_font_montserrat_14, STIM_COLOR_TEAL);
+    view->battery_icon = make_label(link_row, LV_SYMBOL_BATTERY_FULL, &lv_font_montserrat_14,
+                                    STIM_COLOR_TEAL);
     view->link_label = make_label(link_row, "USB已连接  电量 90%", &stim_font_16, STIM_COLOR_MUTED);
 
     view->prescription_label = make_label(view->card, "待配置", &stim_font_16, STIM_COLOR_TEXT);
     lv_obj_set_width(view->prescription_label, LV_PCT(100));
     view->time_label = make_label(view->card, "--:--", &lv_font_montserrat_20, STIM_COLOR_NAVY);
-    view->state_label = make_label(view->card, "待配置", &stim_font_16, STIM_COLOR_MUTED);
-    style_badge(view->state_label, STIM_COLOR_MUTED, STIM_COLOR_DISABLED);
+
+    state_row = make_plain(view->card);
+    lv_obj_set_size(state_row, LV_PCT(100), 18);
+    lv_obj_set_flex_flow(state_row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(state_row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(state_row, 5, 0);
+    view->state_dot = make_label(state_row, LV_SYMBOL_BULLET, &lv_font_montserrat_14, STIM_COLOR_MUTED);
+    view->state_label = make_label(state_row, "待配置", &stim_font_16, STIM_COLOR_MUTED);
 }
 
 static lv_obj_t * create_receiver_panel(lv_obj_t * parent)
