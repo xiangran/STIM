@@ -776,7 +776,7 @@ static void create_header(lv_obj_t * screen)
 
     lv_obj_set_size(header, LV_PCT(100), STIM_HEADER_HEIGHT);
     lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
-    lv_obj_set_style_bg_color(header, color(STIM_COLOR_NAVY), 0);
+    lv_obj_set_style_bg_color(header, color(STIM_COLOR_CARD), 0);
     lv_obj_set_style_bg_opa(header, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(header, 0, 0);
     lv_obj_set_style_pad_hor(header, 16, 0);
@@ -811,15 +811,15 @@ static void create_header(lv_obj_t * screen)
     lv_obj_set_flex_flow(right, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(right, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(right, 16, 0);
-    (void)make_label(right, "14:28", &lv_font_montserrat_24, 0xFFFFFFU);
+    (void)make_label(right, "14:28", &lv_font_montserrat_24, STIM_COLOR_TEXT);
 
     settings = make_button(right, LV_SYMBOL_SETTINGS, false, NULL);
     lv_obj_set_size(settings, STIM_TOUCH_MIN, STIM_TOUCH_MIN);
     lv_obj_set_style_bg_opa(settings, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(settings, 0, 0);
-    lv_obj_set_style_text_color(settings, color(0xFFFFFFU), 0);
+    lv_obj_set_style_text_color(settings, color(STIM_COLOR_NAVY), 0);
     lv_obj_set_style_text_font(lv_obj_get_child(settings, 0), &lv_font_montserrat_20, 0);
-    lv_obj_set_style_text_color(lv_obj_get_child(settings, 0), color(0xFFFFFFU), 0);
+    lv_obj_set_style_text_color(lv_obj_get_child(settings, 0), color(STIM_COLOR_NAVY), 0);
     lv_obj_add_event_cb(settings, settings_event, LV_EVENT_CLICKED, NULL);
 }
 
@@ -1295,9 +1295,9 @@ void stim_ui_create(stim_model_t * model)
 static void set_tab_active(lv_obj_t * tab, bool active)
 {
     lv_obj_t * label = lv_obj_get_child(tab, 0);
-    uint32_t text_color = active ? STIM_COLOR_NAVY : 0xFFFFFFU;
+    uint32_t text_color = active ? 0xFFFFFFU : STIM_COLOR_TEXT;
 
-    lv_obj_set_style_bg_color(tab, color(STIM_COLOR_CARD), 0);
+    lv_obj_set_style_bg_color(tab, color(STIM_COLOR_NAVY), 0);
     lv_obj_set_style_bg_opa(tab, active ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
     lv_obj_set_style_text_color(tab, color(text_color), 0);
     lv_obj_set_style_text_color(label, color(text_color), 0);
