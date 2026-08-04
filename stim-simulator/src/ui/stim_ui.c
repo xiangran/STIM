@@ -100,6 +100,30 @@ static lv_obj_t * make_plain(lv_obj_t * parent)
     return object;
 }
 
+/* LVGL clips a container's children to the container's own plain bounds
+ * unless the container both (a) carries LV_OBJ_FLAG_OVERFLOW_VISIBLE and
+ * (b) reports a non-zero "extended draw size" of its own (lv_refr.c:
+ * lv_obj_redraw() uses obj->coords enlarged by lv_obj_get_ext_draw_size(obj)
+ * as the children clip rect when the flag is set -- and that ext size comes
+ * only from the container's OWN style/event contribution, never from its
+ * children's shadows). A plain flex row like `top`/`bottom` has no shadow of
+ * its own, so ext size is 0 and the flag alone is a no-op: it must also
+ * declare, via LV_EVENT_REFR_EXT_DRAW_SIZE, how far its children's shadows
+ * are allowed to bleed. */
+static void ext_draw_size_event_cb(lv_event_t * e)
+{
+    int32_t extra = (int32_t)(uintptr_t)lv_event_get_user_data(e);
+    lv_event_set_ext_draw_size(e, extra);
+}
+
+static void allow_child_shadow_overflow(lv_obj_t * object, int32_t extra)
+{
+    lv_obj_add_flag(object, LV_OBJ_FLAG_OVERFLOW_VISIBLE);
+    lv_obj_add_event_cb(object, ext_draw_size_event_cb, LV_EVENT_REFR_EXT_DRAW_SIZE,
+                        (void *)(uintptr_t)extra);
+    lv_obj_refresh_ext_draw_size(object);
+}
+
 static lv_obj_t * make_panel(lv_obj_t * parent)
 {
     lv_obj_t * panel = lv_obj_create(parent);
@@ -529,8 +553,6 @@ static void refresh_prescriptions(void)
             bool selected = index == ui.model->selected_prescription;
             lv_obj_set_style_bg_color(ui.prescription_rows[screen][index],
                                       color(selected ? STIM_COLOR_SELECTED : STIM_COLOR_CARD), 0);
-            lv_obj_set_style_border_color(ui.prescription_rows[screen][index],
-                                          color(selected ? STIM_COLOR_BLUE : STIM_COLOR_BORDER), 0);
         }
     }
 }
@@ -846,9 +868,8 @@ static lv_obj_t * create_prescription_row(lv_obj_t * parent, size_t screen, size
     lv_obj_set_size(row, LV_PCT(100), compact ? STIM_TOUCH_MIN : 50);
     lv_obj_set_style_bg_color(row, color(STIM_COLOR_CARD), 0);
     lv_obj_set_style_bg_opa(row, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_color(row, color(STIM_COLOR_BORDER), 0);
-    lv_obj_set_style_border_width(row, 1, 0);
-    lv_obj_set_style_radius(row, 14, 0);
+    lv_obj_set_style_border_width(row, 0, 0);
+    lv_obj_set_style_radius(row, STIM_METRIC_RADIUS, 0);
     lv_obj_set_style_pad_hor(row, 8, 0);
     lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -1048,6 +1069,7 @@ static void create_medium_page(lv_obj_t * screen)
     lv_obj_set_size(top, LV_PCT(100), 286);
     lv_obj_set_flex_flow(top, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_column(top, 12, 0);
+    allow_child_shadow_overflow(top, 24);
     for(index = 0U; index < STIM_CHANNEL_COUNT; ++index) {
         create_channel_card(top, index);
     }
@@ -1057,6 +1079,7 @@ static void create_medium_page(lv_obj_t * screen)
     lv_obj_set_flex_grow(bottom, 1);
     lv_obj_set_flex_flow(bottom, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_column(bottom, 12, 0);
+    allow_child_shadow_overflow(bottom, 24);
     (void)create_prescription_panel(bottom, STIM_SCREEN_MEDIUM, false);
     (void)create_parameter_panel(bottom, STIM_SCREEN_MEDIUM, false);
 }
@@ -1157,6 +1180,7 @@ static void create_low_page(lv_obj_t * screen)
     lv_obj_set_flex_grow(bottom, 1);
     lv_obj_set_flex_flow(bottom, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_column(bottom, 12, 0);
+    allow_child_shadow_overflow(bottom, 24);
     (void)create_prescription_panel(bottom, STIM_SCREEN_LOW, true);
     (void)create_parameter_panel(bottom, STIM_SCREEN_LOW, true);
 }
