@@ -113,7 +113,13 @@ static lv_obj_t * make_plain(lv_obj_t * parent)
  * children's shadows). A plain flex row like `top`/`bottom` has no shadow of
  * its own, so ext size is 0 and the flag alone is a no-op: it must also
  * declare, via LV_EVENT_REFR_EXT_DRAW_SIZE, how far its children's shadows
- * are allowed to bleed. */
+ * are allowed to bleed. Note: `clip_corner` on the SAME object overrides this
+ * mechanism entirely -- lv_refr.c derives the band/mid clip rects from
+ * obj->coords and ignores the extended draw size whenever clip_corner is set,
+ * so the two flags must stay on disjoint sets of objects (currently:
+ * clip_corner on the prescription panel, parameter panel, channel card, and
+ * receiver panel; OVERFLOW_VISIBLE on the medium page's `top` and `bottom`
+ * and the low page's `bottom`). */
 static void ext_draw_size_event_cb(lv_event_t * e)
 {
     int32_t extra = (int32_t)(uintptr_t)lv_event_get_user_data(e);
@@ -417,6 +423,10 @@ static void refresh_receiver(size_t index)
     }
     else if(offline) {
         background = STIM_COLOR_DISABLED;
+    }
+    else if(receiver->state == STIM_STATE_READY) {
+        badge_icon = LV_SYMBOL_OK;
+        badge_bg = STIM_COLOR_BLUE;
     }
 
     set_icon_badge(view->state_badge, badge_icon, badge_bg, LV_OPA_COVER);
@@ -778,7 +788,9 @@ static void create_header(lv_obj_t * screen)
     lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_bg_color(header, color(STIM_COLOR_CARD), 0);
     lv_obj_set_style_bg_opa(header, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_width(header, 0, 0);
+    lv_obj_set_style_border_color(header, color(STIM_COLOR_BORDER), 0);
+    lv_obj_set_style_border_width(header, 1, 0);
+    lv_obj_set_style_border_side(header, LV_BORDER_SIDE_BOTTOM, 0);
     lv_obj_set_style_pad_hor(header, 16, 0);
     lv_obj_set_flex_flow(header, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(header, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -1213,6 +1225,7 @@ static lv_obj_t * create_receiver_panel(lv_obj_t * parent)
 
     lv_obj_set_size(panel, LV_PCT(100), 322);
     lv_obj_set_flex_flow(panel, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_row(panel, 0, 0);
 
     lv_obj_set_style_clip_corner(panel, true, 0);
 
