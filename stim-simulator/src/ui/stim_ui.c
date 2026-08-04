@@ -20,8 +20,6 @@
 #define STIM_COLOR_SELECTED 0xE3F2FDU
 #define STIM_COLOR_PAUSED_SOFT 0xFDF0DFU
 #define STIM_COLOR_RUNNING_SOFT 0xE0F2F1U
-#define STIM_COLOR_GRAD_START 0x22C1C3U
-#define STIM_COLOR_GRAD_END 0x5B8DEFU
 #define STIM_COLOR_SHADOW 0x000000U
 
 #define STIM_HEADER_HEIGHT 64
@@ -250,6 +248,13 @@ static const char * unit_state_text(stim_unit_state_t state)
     }
 }
 
+static void set_card_elevation(lv_obj_t * card, bool elevated)
+{
+    lv_obj_set_style_shadow_opa(card, elevated ? LV_OPA_30 : LV_OPA_20, 0);
+    lv_obj_set_style_shadow_width(card, elevated ? 28 : 20, 0);
+    lv_obj_set_style_shadow_offset_y(card, elevated ? 8 : 6, 0);
+}
+
 static void refresh_channel(size_t index)
 {
     stim_channel_t * channel = &ui.model->channels[index];
@@ -257,32 +262,33 @@ static void refresh_channel(size_t index)
     char buffer[32];
     uint32_t badge_fg = STIM_COLOR_MUTED;
     uint32_t badge_bg = STIM_COLOR_DISABLED;
-    uint32_t border_color = STIM_COLOR_BORDER;
+    uint32_t card_bg = STIM_COLOR_CARD;
+    bool elevated = false;
     bool configured = channel->state != STIM_STATE_UNCONFIGURED;
     bool active = (channel->state == STIM_STATE_RUNNING) || (channel->state == STIM_STATE_PAUSED);
 
     if(channel->state == STIM_STATE_RUNNING) {
-        badge_fg = STIM_COLOR_TEAL;
-        badge_bg = STIM_COLOR_RUNNING_SOFT;
-        border_color = STIM_COLOR_TEAL;
+        badge_fg = 0xFFFFFFU;
+        badge_bg = STIM_COLOR_TEAL;
+        card_bg = STIM_COLOR_RUNNING_SOFT;
+        elevated = true;
     }
     else if(channel->state == STIM_STATE_PAUSED) {
-        badge_fg = STIM_COLOR_AMBER;
-        badge_bg = STIM_COLOR_PAUSED_SOFT;
-        border_color = STIM_COLOR_AMBER;
+        badge_fg = 0xFFFFFFU;
+        badge_bg = STIM_COLOR_AMBER;
+        card_bg = STIM_COLOR_PAUSED_SOFT;
+        elevated = true;
     }
     else if(channel->selected) {
-        badge_fg = STIM_COLOR_BLUE;
-        badge_bg = STIM_COLOR_SELECTED;
-        border_color = STIM_COLOR_BLUE;
+        badge_fg = 0xFFFFFFU;
+        badge_bg = STIM_COLOR_BLUE;
+        card_bg = STIM_COLOR_SELECTED;
+        elevated = true;
     }
 
     style_badge(view->state_label, badge_fg, badge_bg);
-    lv_obj_set_style_border_width(view->card, (channel->selected || active) ? 2 : 1, 0);
-    lv_obj_set_style_border_color(view->card, color(border_color), 0);
-    lv_obj_set_style_bg_color(view->card,
-                              color((channel->selected && !active) ? STIM_COLOR_SELECTED : STIM_COLOR_CARD),
-                              0);
+    lv_obj_set_style_bg_color(view->card, color(card_bg), 0);
+    set_card_elevation(view->card, elevated);
 
     (void)snprintf(buffer, sizeof(buffer), "%c通道", channel->id);
     lv_label_set_text(view->title_label, buffer);
@@ -322,32 +328,31 @@ static void refresh_receiver(size_t index)
     stim_receiver_t * receiver = &ui.model->receivers[index];
     receiver_view_t * view = &ui.receivers[index];
     char buffer[48];
-    uint32_t border_color = STIM_COLOR_BORDER;
     uint32_t background = STIM_COLOR_CARD;
     uint32_t badge_fg = STIM_COLOR_MUTED;
     uint32_t badge_bg = STIM_COLOR_DISABLED;
+    bool elevated = false;
     bool configured = (receiver->state != STIM_STATE_UNCONFIGURED) &&
                       (receiver->state != STIM_STATE_OFFLINE);
 
     if(receiver->state == STIM_STATE_RUNNING) {
-        border_color = STIM_COLOR_TEAL;
         background = STIM_COLOR_RUNNING_SOFT;
-        badge_fg = STIM_COLOR_TEAL;
-        badge_bg = STIM_COLOR_RUNNING_SOFT;
+        badge_fg = 0xFFFFFFU;
+        badge_bg = STIM_COLOR_TEAL;
+        elevated = true;
     }
     else if(receiver->selected) {
-        border_color = STIM_COLOR_BLUE;
         background = STIM_COLOR_SELECTED;
-        badge_fg = STIM_COLOR_BLUE;
-        badge_bg = STIM_COLOR_SELECTED;
+        badge_fg = 0xFFFFFFU;
+        badge_bg = STIM_COLOR_BLUE;
+        elevated = true;
     }
     else if(receiver->state == STIM_STATE_OFFLINE) {
         background = STIM_COLOR_DISABLED;
     }
 
-    lv_obj_set_style_border_color(view->card, color(border_color), 0);
-    lv_obj_set_style_border_width(view->card, receiver->selected ? 2 : 1, 0);
     lv_obj_set_style_bg_color(view->card, color(background), 0);
+    set_card_elevation(view->card, elevated);
     lv_obj_set_style_text_opa(view->card,
                               receiver->state == STIM_STATE_OFFLINE ? LV_OPA_60 : LV_OPA_COVER,
                               0);
@@ -507,10 +512,7 @@ static void refresh_parameters(stim_screen_t screen)
         lv_obj_t * label = lv_obj_get_child(ui.wave_buttons[screen][index], 0);
 
         lv_obj_set_style_bg_color(ui.wave_buttons[screen][index],
-                                  color(selected ? STIM_COLOR_GRAD_START : STIM_COLOR_DISABLED), 0);
-        lv_obj_set_style_bg_grad_color(ui.wave_buttons[screen][index], color(STIM_COLOR_GRAD_END), 0);
-        lv_obj_set_style_bg_grad_dir(ui.wave_buttons[screen][index],
-                                    selected ? LV_GRAD_DIR_HOR : LV_GRAD_DIR_NONE, 0);
+                                  color(selected ? STIM_COLOR_BLUE : STIM_COLOR_DISABLED), 0);
         lv_obj_set_style_text_color(ui.wave_buttons[screen][index],
                                     color(selected ? 0xFFFFFFU : STIM_COLOR_TEXT), 0);
         lv_obj_set_style_text_color(label, color(selected ? 0xFFFFFFU : STIM_COLOR_TEXT), 0);
@@ -857,9 +859,7 @@ static lv_obj_t * create_prescription_row(lv_obj_t * parent, size_t screen, size
     badge = make_plain(row);
     lv_obj_set_size(badge, 30, 30);
     lv_obj_set_style_radius(badge, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_bg_color(badge, color(STIM_COLOR_GRAD_START), 0);
-    lv_obj_set_style_bg_grad_color(badge, color(STIM_COLOR_GRAD_END), 0);
-    lv_obj_set_style_bg_grad_dir(badge, LV_GRAD_DIR_HOR, 0);
+    lv_obj_set_style_bg_color(badge, color(STIM_COLOR_BLUE), 0);
     lv_obj_set_style_bg_opa(badge, LV_OPA_COVER, 0);
     (void)snprintf(number, sizeof(number), "%02u", (unsigned)(index + 1U));
     lv_obj_t * badge_label = make_label(badge, number, &lv_font_montserrat_20, 0xFFFFFFU);
@@ -958,15 +958,12 @@ static void create_parameter_row(lv_obj_t * parent,
     lv_obj_set_style_bg_color(ui.parameters[screen][parameter].slider,
                               color(STIM_COLOR_DISABLED), LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui.parameters[screen][parameter].slider,
-                              color(STIM_COLOR_GRAD_START), LV_PART_INDICATOR);
-    lv_obj_set_style_bg_grad_color(ui.parameters[screen][parameter].slider,
-                                   color(STIM_COLOR_GRAD_END), LV_PART_INDICATOR);
-    lv_obj_set_style_bg_grad_dir(ui.parameters[screen][parameter].slider, LV_GRAD_DIR_HOR, LV_PART_INDICATOR);
+                              color(STIM_COLOR_BLUE), LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(ui.parameters[screen][parameter].slider,
                               color(STIM_COLOR_CARD), LV_PART_KNOB);
     lv_obj_set_style_border_width(ui.parameters[screen][parameter].slider, 2, LV_PART_KNOB);
     lv_obj_set_style_border_color(ui.parameters[screen][parameter].slider,
-                                  color(STIM_COLOR_GRAD_END), LV_PART_KNOB);
+                                  color(STIM_COLOR_BLUE), LV_PART_KNOB);
     lv_obj_set_style_shadow_width(ui.parameters[screen][parameter].slider, 6, LV_PART_KNOB);
     lv_obj_set_style_shadow_color(ui.parameters[screen][parameter].slider, color(STIM_COLOR_SHADOW), LV_PART_KNOB);
     lv_obj_set_style_shadow_opa(ui.parameters[screen][parameter].slider, LV_OPA_20, LV_PART_KNOB);
