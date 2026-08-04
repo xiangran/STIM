@@ -599,8 +599,13 @@ static void refresh_prescriptions(void)
     for(screen = 0U; screen < 2U; ++screen) {
         for(index = 0U; index < STIM_PRESCRIPTION_COUNT; ++index) {
             bool selected = index == ui.model->selected_prescription;
-            lv_obj_set_style_bg_color(ui.prescription_rows[screen][index],
-                                      color(selected ? STIM_COLOR_SELECTED : STIM_COLOR_CARD), 0);
+            lv_obj_t * row = ui.prescription_rows[screen][index];
+            lv_obj_t * indicator = lv_obj_get_child(row, 2);
+
+            lv_obj_set_style_bg_color(row, color(selected ? STIM_COLOR_SELECTED : STIM_COLOR_CARD), 0);
+            lv_label_set_text(indicator, selected ? LV_SYMBOL_OK : LV_SYMBOL_RIGHT);
+            lv_obj_set_style_text_color(indicator,
+                                        color(selected ? STIM_COLOR_BLUE : STIM_COLOR_MUTED), 0);
         }
     }
 }
@@ -946,6 +951,9 @@ static lv_obj_t * create_prescription_row(lv_obj_t * parent, size_t screen, size
 
     lv_obj_t * text = make_label(row, stim_prescriptions[index], &stim_font_16, STIM_COLOR_TEXT);
     lv_obj_set_flex_grow(text, 1);
+
+    (void)make_label(row, LV_SYMBOL_RIGHT, &lv_font_montserrat_16, STIM_COLOR_MUTED);
+
     ui.prescription_rows[screen][index] = row;
     return row;
 }
@@ -1096,14 +1104,15 @@ static lv_obj_t * create_parameter_panel(lv_obj_t * parent, stim_screen_t screen
     lv_obj_set_flex_align(action_row, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
     if(screen == STIM_SCREEN_LOW) {
-        lv_obj_t * placement = make_button(action_row, "查看贴敷位置", false, NULL);
+        lv_obj_t * placement = make_icon_text_button(action_row, LV_SYMBOL_GPS, "查看贴敷位置",
+                                                     false, NULL);
         lv_obj_set_size(placement, 250, 48);
         lv_obj_add_event_cb(placement, placement_event, LV_EVENT_CLICKED, NULL);
     }
 
-    apply = make_button(action_row,
-                        screen == STIM_SCREEN_MEDIUM ? "应用到所选通道" : "配置到所选单元",
-                        true, NULL);
+    apply = make_icon_text_button(action_row, LV_SYMBOL_RIGHT,
+                                  screen == STIM_SCREEN_MEDIUM ? "应用到所选通道" : "配置到所选单元",
+                                  true, NULL);
     lv_obj_set_height(apply, 48);
     lv_obj_set_flex_grow(apply, 1);
     lv_obj_add_event_cb(apply,
@@ -1205,17 +1214,22 @@ static lv_obj_t * create_receiver_panel(lv_obj_t * parent)
     lv_obj_set_size(panel, LV_PCT(100), 322);
     lv_obj_set_flex_flow(panel, LV_FLEX_FLOW_COLUMN);
 
+    lv_obj_set_style_clip_corner(panel, true, 0);
+
     header = make_plain(panel);
     lv_obj_set_size(header, LV_PCT(100), 48);
+    lv_obj_set_style_bg_color(header, color(STIM_COLOR_NAVY), 0);
+    lv_obj_set_style_bg_opa(header, LV_OPA_COVER, 0);
     lv_obj_set_style_pad_hor(header, 16, 0);
     lv_obj_set_flex_flow(header, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(header, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_column(header, 18, 0);
-    (void)make_label(header, "治疗单元", &stim_font_20, STIM_COLOR_TEXT);
-    lv_obj_t * summary = make_label(header, "在线 10 / 12", &stim_font_16, STIM_COLOR_MUTED);
+    lv_obj_set_style_pad_column(header, 10, 0);
+    (void)make_label(header, LV_SYMBOL_USB, &lv_font_montserrat_16, 0xFFFFFFU);
+    (void)make_label(header, "治疗单元", &stim_font_20, 0xFFFFFFU);
+    lv_obj_t * summary = make_label(header, "在线 10 / 12", &stim_font_16, 0xFFFFFFU);
     lv_obj_set_flex_grow(summary, 1);
-    select_all = make_button(header, "全选", false, NULL);
-    lv_obj_set_size(select_all, 88, STIM_TOUCH_MIN);
+    select_all = make_icon_text_button(header, LV_SYMBOL_OK, "全选", false, NULL);
+    lv_obj_set_size(select_all, 104, STIM_TOUCH_MIN);
     lv_obj_add_event_cb(select_all, select_all_event, LV_EVENT_CLICKED, NULL);
 
     units = make_plain(panel);
