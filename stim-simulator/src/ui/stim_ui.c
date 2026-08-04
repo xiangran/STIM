@@ -51,6 +51,7 @@ typedef struct {
     lv_obj_t * state_badge;
     lv_obj_t * link_icon;
     lv_obj_t * battery_icon;
+    lv_obj_t * battery_label;
     lv_obj_t * link_label;
     lv_obj_t * prescription_label;
     lv_obj_t * time_label;
@@ -434,14 +435,16 @@ static void refresh_receiver(size_t index)
 
     if(offline) {
         lv_label_set_text(view->battery_icon, LV_SYMBOL_BATTERY_EMPTY);
-        lv_label_set_text(view->link_label, "USB --  电量 --");
+        lv_label_set_text(view->link_label, "--");
+        lv_label_set_text(view->battery_label, "--");
         lv_label_set_text(view->prescription_label, "离线");
         lv_label_set_text(view->time_label, "--:--");
     }
     else {
         lv_label_set_text(view->battery_icon, battery_symbol(receiver->battery_percent));
-        (void)snprintf(buffer, sizeof(buffer), "USB已连接  电量 %u%%", receiver->battery_percent);
-        lv_label_set_text(view->link_label, buffer);
+        lv_label_set_text(view->link_label, "已连接");
+        (void)snprintf(buffer, sizeof(buffer), "%u%%", receiver->battery_percent);
+        lv_label_set_text(view->battery_label, buffer);
         lv_label_set_text(view->prescription_label,
                           configured && (receiver->prescription != NULL) ?
                           receiver->prescription : "待配置");
@@ -1173,9 +1176,10 @@ static void create_receiver_card(lv_obj_t * parent, size_t index)
     lv_obj_set_flex_align(link_row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(link_row, 4, 0);
     view->link_icon = make_label(link_row, LV_SYMBOL_USB, &lv_font_montserrat_14, STIM_COLOR_TEAL);
+    view->link_label = make_label(link_row, "已连接", &stim_font_16, STIM_COLOR_MUTED);
     view->battery_icon = make_label(link_row, LV_SYMBOL_BATTERY_FULL, &lv_font_montserrat_14,
                                     STIM_COLOR_TEAL);
-    view->link_label = make_label(link_row, "USB已连接  电量 90%", &stim_font_16, STIM_COLOR_MUTED);
+    view->battery_label = make_label(link_row, "92%", &stim_font_16, STIM_COLOR_MUTED);
 
     view->prescription_label = make_label(view->card, "待配置", &stim_font_16, STIM_COLOR_TEXT);
     lv_obj_set_width(view->prescription_label, LV_PCT(100));
